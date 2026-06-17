@@ -24,8 +24,7 @@ if (!hasScript('verify', 'npm run check:installer')) fail('verify should run the
 
 if (!pkg.devDependencies?.['cross-env']) fail('cross-env should be present so bundled browser install works on Windows and CI.');
 
-if (!String(build.artifactName || '').includes('Setup')) fail('Installer artifact name should clearly identify the setup file.');
-if (!String(build.artifactName || '').includes('${version}')) fail('Installer artifact name should include the app version.');
+if (build.artifactName !== 'install.${ext}') fail('Installer artifact name should produce one simple release/install.exe file.');
 
 const files = Array.isArray(build.files) ? build.files : [];
 if (!files.includes('docs/**/*')) fail('Packaged app should include docs so the in-app help link still works after installation.');
@@ -55,14 +54,16 @@ for (const requiredFile of ['docs/INSTALLER.md', 'BUILD WINDOWS INSTALLER.bat', 
 const buildWorkflow = fs.readFileSync('.github/workflows/build-windows-exe.yml', 'utf8');
 if (!buildWorkflow.includes('npm run dist:installer')) fail('Build Windows workflow should build the installer.');
 if (!buildWorkflow.includes('SiteShot-Auditor-Studio-Ultra-Installer')) fail('Build workflow should upload a clearly named installer artifact.');
+if (!buildWorkflow.includes('release/install.exe')) fail('Build workflow should upload the single install.exe file.');
 
 const releaseWorkflow = fs.readFileSync('.github/workflows/release-windows.yml', 'utf8');
 if (!releaseWorkflow.includes('npm run dist:installer')) fail('Release workflow should build the installer.');
-if (!releaseWorkflow.includes('*Setup*.exe')) fail('Release workflow should publish the setup EXE.');
+if (!releaseWorkflow.includes('release/install.exe')) fail('Release workflow should publish install.exe.');
 
 const installerBatch = fs.readFileSync('BUILD WINDOWS INSTALLER.bat', 'utf8');
 if (!installerBatch.includes('npm.cmd run verify')) fail('Installer batch file should run full verification before building.');
 if (!installerBatch.includes('npm.cmd run dist:installer')) fail('Installer batch file should build the setup installer.');
+if (!installerBatch.includes('release\\install.exe')) fail('Installer batch file should look for release\\install.exe.');
 
 if (failures.length) {
   console.error('\nInstaller smoke check failed:\n');
