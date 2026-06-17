@@ -83,7 +83,7 @@ export async function loadConfig(args) {
 
   return normaliseArgs({
     ...args,
-    url: file.url ?? args.url,
+    url: args.url || file.url || '',
     out: file.out ?? args.out,
     devices: Array.isArray(file.devices) ? file.devices.join(',') : args.devices,
     maxPages: file.maxPages ?? args.maxPages,
@@ -106,9 +106,17 @@ export async function loadConfig(args) {
   });
 }
 
+function positiveNumber(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
 export function normaliseArgs(args) {
   return {
     ...args,
+    maxPages: positiveNumber(args.maxPages, 40),
+    depth: positiveNumber(args.depth, 2),
+    waitMs: Math.max(0, Number.isFinite(Number(args.waitMs)) ? Number(args.waitMs) : 1000),
     includeList: splitList(args.include),
     excludeList: splitList(args.exclude),
     pageList: splitList(args.pages),
