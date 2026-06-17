@@ -24,7 +24,8 @@ const requiredFiles = [
   '.github/workflows/run-ultra-audit.yml',
   'examples/eventflow.ultra-audit.json',
   'examples/eventflow-public.ultra-audit.json',
-  'examples/eventflow-full.ultra-audit.json'
+  'examples/eventflow-full.ultra-audit.json',
+  'scripts/config-smoke-check.mjs'
 ];
 
 const requiredScripts = [
@@ -32,6 +33,7 @@ const requiredScripts = [
   'preflight',
   'verify',
   'check:repo',
+  'check:config',
   'audit:eventflow',
   'audit:eventflow:public',
   'audit:eventflow:full'
@@ -118,6 +120,8 @@ for (const script of requiredScripts) {
   if (!pkg?.scripts?.[script]) fail(`Missing npm script: ${script}`);
 }
 
+if (!pkg?.scripts?.verify?.includes('npm run check:config')) fail('verify should run config smoke checks.');
+
 for (const docFile of ['README.md', 'README FIRST - WINDOWS.txt', 'CHANGELOG.md', 'SECURITY.md']) {
   const content = read(docFile);
   if (version && !content.includes(version)) fail(`${docFile} does not mention version ${version}.`);
@@ -193,6 +197,10 @@ for (const workflow of workflowFiles) {
     if (content.includes(blockedRef)) fail(`${workflow} still uses deprecated or warning-prone action reference: ${blockedRef}`);
   }
 }
+
+const configSmokeCheck = read('scripts/config-smoke-check.mjs');
+if (!configSmokeCheck.includes('CLI URL should win')) fail('Config smoke check should verify workflow/CLI URL handling.');
+if (!configSmokeCheck.includes('Invalid maxPages should fall back')) fail('Config smoke check should cover numeric default handling.');
 
 const prTemplate = read('.github/pull_request_template.md');
 for (const requiredText of ['Pre-merge checklist', 'Testing notes', 'Follow-up work']) {
