@@ -46,6 +46,9 @@ try {
   assert(loaded.excludeList.includes('/private'), 'Exclude list should load.');
   assert(loaded.flagTextList.includes('placeholder'), 'Flag text list should load.');
 
+  const inlineUrlArgs = parseArgs(['audit', '--url=https://inline.example/search?q=a=b&mode=test']);
+  assert(inlineUrlArgs.url === 'https://inline.example/search?q=a=b&mode=test', 'Inline URL values should preserve equals signs after the first equals.');
+
   const normalised = normaliseArgs({
     include: '',
     exclude: '',
@@ -59,7 +62,11 @@ try {
 
   assert(normalised.maxPages === 40, 'Invalid maxPages should fall back to default.');
   assert(normalised.depth === 2, 'Invalid depth should fall back to default.');
-  assert(normalised.waitMs === 0, 'Negative waitMs should clamp to zero.');
+  assert(normalised.waitMs === 1000, 'Invalid negative waitMs should fall back to default.');
+
+  const zeroDepth = normaliseArgs({ include: '', exclude: '', pages: '', flagText: '', modules: '', maxPages: 1, depth: 0, waitMs: 0 });
+  assert(zeroDepth.depth === 0, 'Depth zero should be allowed for homepage-only discovery.');
+  assert(zeroDepth.waitMs === 0, 'Wait zero should be allowed for fast smoke checks.');
 
   console.log('Config smoke checks passed.');
 } finally {
