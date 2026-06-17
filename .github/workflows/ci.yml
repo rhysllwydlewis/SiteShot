@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,8 +10,8 @@ on:
       - main
 
 jobs:
-  check:
-    name: Check and preflight
+  verify:
+    name: Verify repo and app preflight
     runs-on: windows-latest
 
     steps:
@@ -25,8 +26,5 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run syntax checks
-        run: npm run check
-
-      - name: Run app preflight
-        run: npm run preflight
+      - name: Run full verification
+        run: npm run verify

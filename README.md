@@ -52,6 +52,8 @@ Security checks are passive and non-invasive. The tool does not exploit, brute f
 
 It checks configuration, headers, resources, public page source, common accidental exposure paths by status code only, and other safe indicators.
 
+For the full security scope, read `SECURITY.md` and `docs/SAFETY.md`.
+
 ## Run on Windows
 
 Extract the zip, then double-click:
@@ -86,9 +88,13 @@ This builds an unpacked Windows app and copies it to:
 npm install
 npm run install:browsers
 npm run check
+npm run check:repo
 npm run preflight
+npm run verify
 npm run doctor
 npm run audit:eventflow
+npm run audit:eventflow:public
+npm run audit:eventflow:full
 npm run desktop
 ```
 
@@ -106,3 +112,13 @@ The repository includes workflows for:
 - `examples/eventflow-public.ultra-audit.json` audits public EventFlow pages only.
 - `examples/eventflow-full.ultra-audit.json` includes public pages plus auth/reset/verify routes.
 - `examples/eventflow.ultra-audit.json` is the default public EventFlow audit used by `npm run audit:eventflow`.
+
+## Project docs
+
+- `README FIRST - WINDOWS.txt` - Windows user guide.
+- `docs/TROUBLESHOOTING.md` - common local build, browser and audit issues.
+- `docs/RELEASE.md` - release process.
+- `docs/ROADMAP.md` - practical product roadmap.
+- `CHANGELOG.md` - version history.
+- `CONTRIBUTING.md` - contribution and PR expectations.
+- `SECURITY.md` - security policy and safe testing scope.
