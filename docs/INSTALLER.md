@@ -50,7 +50,7 @@ release/install.exe
 Use:
 
 ```text
-Actions → Build Windows EXE → Run workflow
+Actions → Build Windows Installer → Run workflow
 ```
 
 The workflow uploads one user-facing artifact:
