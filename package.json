@@ -23,11 +23,14 @@
     "install:browsers:with-deps": "npx playwright install --with-deps chromium",
     "dist:win": "electron-builder --win --x64 --dir",
     "pack:win": "electron-builder --win --x64 --dir",
-    "check": "node --check bin/siteshot.mjs && node --check src/audit.mjs && node --check src/lib/config.mjs && node --check src/lib/devices.mjs && node --check desktop/main.mjs && node --check src/reporting/reports.mjs && node --check scripts/preflight-check.mjs && node --check scripts/premerge-check.mjs && node --check scripts/config-smoke-check.mjs",
+    "dist:installer": "electron-builder --win nsis --x64",
+    "installer:win": "npm run dist:installer",
+    "check": "node --check bin/siteshot.mjs && node --check src/audit.mjs && node --check src/lib/config.mjs && node --check src/lib/devices.mjs && node --check desktop/main.mjs && node --check src/reporting/reports.mjs && node --check scripts/preflight-check.mjs && node --check scripts/premerge-check.mjs && node --check scripts/config-smoke-check.mjs && node --check scripts/installer-smoke-check.mjs",
     "check:repo": "node scripts/premerge-check.mjs",
     "check:config": "node scripts/config-smoke-check.mjs",
+    "check:installer": "node scripts/installer-smoke-check.mjs",
     "preflight": "node scripts/preflight-check.mjs",
-    "verify": "npm run check && npm run check:repo && npm run check:config && npm run preflight"
+    "verify": "npm run check && npm run check:repo && npm run check:config && npm run check:installer && npm run preflight"
   },
   "dependencies": {
     "playwright": "^1.49.1",
@@ -44,6 +47,7 @@
   "build": {
     "appId": "uk.siteshot.auditorstudio",
     "productName": "SiteShot Auditor Studio",
+    "artifactName": "SiteShot-Auditor-Studio-Ultra-Setup-${version}-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -54,14 +58,42 @@
       "examples/**/*",
       "templates/**/*",
       "assets/**/*",
+      "docs/**/*",
       "scripts/**/*",
       "package.json",
       "README.md",
       "README FIRST - WINDOWS.txt"
     ],
     "win": {
-      "target": [],
-      "icon": null
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "publisherName": "SiteShot",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "SiteShot Auditor Studio",
+      "uninstallDisplayName": "SiteShot Auditor Studio Ultra",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "menuCategory": "SiteShot"
     },
     "asar": false
   },
