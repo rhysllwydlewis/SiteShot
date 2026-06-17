@@ -21,7 +21,7 @@ function hasChromiumBrowser(browserPath) {
 }
 
 function isPackagedRuntime() {
-  return Boolean(process.defaultApp === false || process.resourcesPath?.includes('resources'));
+  return process.defaultApp === false || appRootDir.includes(`${path.sep}resources${path.sep}app`);
 }
 
 function findBundledBrowserPath() {
