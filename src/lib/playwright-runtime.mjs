@@ -16,7 +16,7 @@ function hasBundledBrowsers() {
 }
 
 function isPackagedRuntime() {
-  return Boolean(process.defaultApp === false || process.resourcesPath?.includes('resources'));
+  return process.defaultApp === false;
 }
 
 export function configureBundledPlaywrightBrowsers() {
