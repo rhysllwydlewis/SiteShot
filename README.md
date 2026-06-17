@@ -54,7 +54,23 @@ It checks configuration, headers, resources, public page source, common accident
 
 For the full security scope, read `SECURITY.md` and `docs/SAFETY.md`.
 
-## Run on Windows
+## Recommended Windows install
+
+Normal users should download the Windows setup installer from the latest GitHub Release:
+
+```text
+SiteShot-Auditor-Studio-Ultra-Setup-<version>-x64.exe
+```
+
+Run the installer, keep the shortcut options selected, then launch **SiteShot Auditor Studio** from the desktop shortcut or the Windows Start Menu.
+
+For installer behaviour and release notes, read:
+
+```text
+docs/INSTALLER.md
+```
+
+## Run on Windows without installer
 
 Extract the zip, then double-click:
 
@@ -68,7 +84,22 @@ For the full Windows guide, read:
 README FIRST - WINDOWS.txt
 ```
 
-## Build Windows app locally
+## Build Windows installer locally
+
+```bash
+npm install
+npm run install:browsers
+npm run verify
+npm run dist:installer
+```
+
+Expected output:
+
+```text
+release/SiteShot-Auditor-Studio-Ultra-Setup-<version>-x64.exe
+```
+
+## Build unpacked Windows app locally
 
 Double-click:
 
@@ -76,10 +107,16 @@ Double-click:
 BUILD WINDOWS EXE.bat
 ```
 
-This builds an unpacked Windows app and copies it to:
+Or run:
+
+```bash
+npm run dist:win
+```
+
+This builds an unpacked Windows app at:
 
 ```text
-%LOCALAPPDATA%\Programs\SiteShot Auditor Studio
+release/win-unpacked/SiteShot Auditor Studio.exe
 ```
 
 ## Developer commands
@@ -89,6 +126,8 @@ npm install
 npm run install:browsers
 npm run check
 npm run check:repo
+npm run check:config
+npm run check:installer
 npm run preflight
 npm run verify
 npm run doctor
@@ -103,8 +142,8 @@ npm run desktop
 The repository includes workflows for:
 
 - CI checks on push and pull request.
-- Manual Windows app builds.
-- Manual release packaging.
+- Manual Windows installer builds.
+- Manual release packaging with the setup installer as the recommended download.
 - Manual EventFlow audit runs.
 
 The workflow action baseline is documented in `docs/WORKFLOW-MAINTENANCE.md`.
@@ -118,6 +157,7 @@ The workflow action baseline is documented in `docs/WORKFLOW-MAINTENANCE.md`.
 ## Project docs
 
 - `README FIRST - WINDOWS.txt` - Windows user guide.
+- `docs/INSTALLER.md` - Windows installer and release packaging guide.
 - `docs/TROUBLESHOOTING.md` - common local build, browser and audit issues.
 - `docs/RELEASE.md` - release process.
 - `docs/ROADMAP.md` - practical product roadmap.
