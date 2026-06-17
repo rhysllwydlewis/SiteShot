@@ -50,18 +50,18 @@ jobs:
       - name: Ensure installer and EXE exist
         shell: pwsh
         run: |
-          $installer = Get-ChildItem -Path release -Recurse -Filter '*Setup*.exe' | Select-Object -First 1
-          if (-not $installer) { throw "No Windows installer setup EXE was created" }
+          $installer = Join-Path "release" "install.exe"
+          if (-not (Test-Path $installer)) { throw "No Windows install.exe was created" }
           $exe = Get-ChildItem -Path release -Recurse -Filter 'SiteShot Auditor Studio.exe' | Select-Object -First 1
           if (-not $exe) { throw "No unpacked app EXE was created" }
-          $installer | Format-Table FullName, Length
+          Get-Item $installer | Format-Table FullName, Length
           $exe | Format-Table FullName, Length
 
       - name: Upload Windows installer artifact
         uses: actions/upload-artifact@v7
         with:
           name: SiteShot-Auditor-Studio-Ultra-Installer
-          path: release/*Setup*.exe
+          path: release/install.exe
 
       - name: Upload unpacked Windows artifact
         uses: actions/upload-artifact@v7
