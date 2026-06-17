@@ -15,16 +15,21 @@ function hasScript(name, fragment) {
   return typeof scripts[name] === 'string' && (!fragment || scripts[name].includes(fragment));
 }
 
+if (!hasScript('install:browsers:bundled', 'PLAYWRIGHT_BROWSERS_PATH=0')) fail('Missing bundled Playwright browser install script.');
+if (!hasScript('dist:installer', 'install:browsers:bundled')) fail('dist:installer should install bundled Playwright browsers before packaging.');
 if (!hasScript('dist:installer', 'electron-builder --win nsis --x64')) fail('Missing dist:installer script for NSIS Windows installer builds.');
 if (!hasScript('installer:win', 'dist:installer')) fail('Missing installer:win convenience script.');
 if (!hasScript('check:installer', 'installer-smoke-check')) fail('Missing check:installer script.');
 if (!hasScript('verify', 'npm run check:installer')) fail('verify should run the installer smoke check.');
+
+if (!pkg.devDependencies?.['cross-env']) fail('cross-env should be present so bundled browser install works on Windows and CI.');
 
 if (!String(build.artifactName || '').includes('Setup')) fail('Installer artifact name should clearly identify the setup file.');
 if (!String(build.artifactName || '').includes('${version}')) fail('Installer artifact name should include the app version.');
 
 const files = Array.isArray(build.files) ? build.files : [];
 if (!files.includes('docs/**/*')) fail('Packaged app should include docs so the in-app help link still works after installation.');
+if (!files.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Packaged app should include the bundled Playwright browser runtime.');
 
 const targets = Array.isArray(win.target) ? win.target : [];
 const hasNsisTarget = targets.some(target => {
