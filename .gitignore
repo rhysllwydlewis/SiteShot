@@ -2,6 +2,7 @@ node_modules/
 audit/
 release/
 dist/
+playwright-browsers/
 .DS_Store
 .env
 *.log
