@@ -35,7 +35,12 @@ const hasNsisTarget = targets.some(target => {
   if (typeof target === 'string') return target === 'nsis';
   return target?.target === 'nsis';
 });
+const hasDirTarget = targets.some(target => {
+  if (typeof target === 'string') return target === 'dir';
+  return target?.target === 'dir';
+});
 if (!hasNsisTarget) fail('Windows build should include an NSIS installer target.');
+if (hasDirTarget) fail('Installer packaging should not expose a separate dir target as a user-facing Windows package.');
 
 if (win.requestedExecutionLevel !== 'asInvoker') fail('Windows app should request asInvoker execution level by default.');
 if (nsis.oneClick !== false) fail('Installer should use assisted install mode rather than opaque one-click install.');
@@ -55,10 +60,12 @@ const buildWorkflow = fs.readFileSync('.github/workflows/build-windows-exe.yml',
 if (!buildWorkflow.includes('npm run dist:installer')) fail('Build Windows workflow should build the installer.');
 if (!buildWorkflow.includes('SiteShot-Auditor-Studio-Ultra-Installer')) fail('Build workflow should upload a clearly named installer artifact.');
 if (!buildWorkflow.includes('release/install.exe')) fail('Build workflow should upload the single install.exe file.');
+if (buildWorkflow.includes('Windows-Unpacked')) fail('Build workflow should not upload an unpacked Windows artifact.');
 
 const releaseWorkflow = fs.readFileSync('.github/workflows/release-windows.yml', 'utf8');
 if (!releaseWorkflow.includes('npm run dist:installer')) fail('Release workflow should build the installer.');
 if (!releaseWorkflow.includes('release/install.exe')) fail('Release workflow should publish install.exe.');
+if (releaseWorkflow.includes('Windows-Unpacked')) fail('Release workflow should not publish an unpacked Windows artifact.');
 
 const installerBatch = fs.readFileSync('BUILD WINDOWS INSTALLER.bat', 'utf8');
 if (!installerBatch.includes('npm.cmd run verify')) fail('Installer batch file should run full verification before building.');
