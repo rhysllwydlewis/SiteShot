@@ -26,7 +26,7 @@
     "pack:win": "electron-builder --win --x64 --dir",
     "dist:installer": "npm run install:browsers:bundled && electron-builder --win nsis --x64",
     "installer:win": "npm run dist:installer",
-    "check": "node --check bin/siteshot.mjs && node --check src/audit.mjs && node --check src/lib/config.mjs && node --check src/lib/devices.mjs && node --check desktop/main.mjs && node --check src/reporting/reports.mjs && node --check scripts/preflight-check.mjs && node --check scripts/premerge-check.mjs && node --check scripts/config-smoke-check.mjs && node --check scripts/installer-smoke-check.mjs",
+    "check": "node --check bin/siteshot.mjs && node --check src/audit.mjs && node --check src/lib/config.mjs && node --check src/lib/devices.mjs && node --check src/lib/playwright-runtime.mjs && node --check desktop/main.mjs && node --check src/reporting/reports.mjs && node --check scripts/preflight-check.mjs && node --check scripts/premerge-check.mjs && node --check scripts/config-smoke-check.mjs && node --check scripts/installer-smoke-check.mjs",
     "check:repo": "node scripts/premerge-check.mjs",
     "check:config": "node scripts/config-smoke-check.mjs",
     "check:installer": "node scripts/installer-smoke-check.mjs",
