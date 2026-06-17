@@ -59,6 +59,25 @@ if %errorlevel% neq 0 (
   exit /b 1
 )
 
+if not exist "playwright-browsers" (
+  echo.
+  echo ERROR: The bundled Playwright browser folder was not created.
+  echo Expected:
+  echo playwright-browsers
+  pause
+  exit /b 1
+)
+
+set "FOUND_BROWSER="
+for /r "playwright-browsers" %%F in (chrome-headless-shell.exe) do set "FOUND_BROWSER=%%F"
+if "%FOUND_BROWSER%"=="" (
+  echo.
+  echo ERROR: Chromium was not found inside playwright-browsers.
+  echo The installer would install, but Auto/Sitemap discovery would fail.
+  pause
+  exit /b 1
+)
+
 set "FOUND_INSTALLER="
 if exist "release\install.exe" set "FOUND_INSTALLER=%~dp0release\install.exe"
 
@@ -71,6 +90,22 @@ if "%FOUND_INSTALLER%"=="" (
   exit /b 1
 )
 
+for %%A in ("release\install.exe") do set "INSTALLER_SIZE=%%~zA"
+if %INSTALLER_SIZE% LSS 100000000 (
+  echo.
+  echo ERROR: install.exe looks too small to include the bundled browser runtime.
+  echo Size found: %INSTALLER_SIZE% bytes
+  echo Expected at least 100 MB.
+  pause
+  exit /b 1
+)
+
+echo.
+echo Bundled browser found:
+echo %FOUND_BROWSER%
+echo.
+echo Installer size check passed:
+echo %INSTALLER_SIZE% bytes
 echo.
 echo ============================================================
 echo  Installer build complete
