@@ -45,12 +45,6 @@ Expected installer output:
 release/install.exe
 ```
 
-Expected unpacked output:
-
-```text
-release/win-unpacked/SiteShot Auditor Studio.exe
-```
-
 ## GitHub Actions
 
 Use:
@@ -59,10 +53,17 @@ Use:
 Actions → Build Windows EXE → Run workflow
 ```
 
-The workflow uploads two artifacts:
+The workflow uploads one user-facing artifact:
 
-- `SiteShot-Auditor-Studio-Ultra-Installer` containing `install.exe`
-- `SiteShot-Auditor-Studio-Ultra-Windows-Unpacked` for fallback/manual use
+```text
+SiteShot-Auditor-Studio-Ultra-Installer
+```
+
+That artifact contains:
+
+```text
+install.exe
+```
 
 Use:
 
@@ -70,7 +71,7 @@ Use:
 Actions → Release Windows Build → Run workflow
 ```
 
-to publish `install.exe` as a GitHub Release asset.
+to publish `install.exe` as the GitHub Release asset.
 
 ## Branding follow-up
 
