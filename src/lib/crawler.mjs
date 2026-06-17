@@ -26,6 +26,23 @@ const LOW_VALUE_PATH_PATTERNS = [
   /\/account\/?$/i
 ];
 
+const ASSET_PATH_PREFIXES = [
+  '/_next/',
+  '/assets/',
+  '/static/',
+  '/dist/',
+  '/build/',
+  '/chunks/',
+  '/fonts/',
+  '/images/',
+  '/img/',
+  '/css/',
+  '/js/',
+  '/api/',
+  '/cdn-cgi/',
+  '/node_modules/'
+];
+
 const COMMON_PUBLIC_ROUTES = [
   '/',
   '/about',
@@ -106,6 +123,8 @@ function candidateScore(item, baseUrl) {
     const path = url.pathname || '/';
     score += (Number(item.depth) || 0) * 18;
     if (String(item.source || '').includes('sitemap')) score -= 18;
+    if (String(item.source || '').includes('bundle-route')) score -= 14;
+    if (String(item.source || '').includes('app-data')) score -= 12;
     if (String(item.source || '').includes('homepage')) score -= 8;
     if (String(item.source || '').includes('common-route')) score += 6;
     if (IMPORTANT_PATH_PATTERNS.some(pattern => pattern.test(path))) score -= 16;
@@ -137,15 +156,55 @@ function uniqueCandidates(candidates, baseUrl = '') {
   return baseUrl ? list.sort((a, b) => candidateScore(a, baseUrl) - candidateScore(b, baseUrl)) : list;
 }
 
+function isUsefulRoutePath(value) {
+  const route = String(value || '').trim();
+  if (!route.startsWith('/')) return false;
+  if (route.startsWith('//')) return false;
+  if (route.length > 160) return false;
+  if (/\s|[{}<>]|\\/.test(route)) return false;
+  if (/^\/(?:[a-f0-9]{16,}|\d+)$/.test(route)) return false;
+  const lower = route.toLowerCase();
+  if (ASSET_PATH_PREFIXES.some(prefix => lower.startsWith(prefix))) return false;
+  if (/\.(?:js|css|map|json|xml|txt|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|mp4|webm|mp3|pdf|zip)(?:$|[?#])/i.test(lower)) return false;
+  if (/\.(?:min|chunk)\./i.test(lower)) return false;
+  return true;
+}
+
+function routeStringsFromText(text, baseUrl, source) {
+  const base = new URL(baseUrl);
+  const routes = [];
+  const body = String(text || '').slice(0, 900000);
+
+  const absoluteMatches = body.match(/https?:\/\/[^"'`\s<>\\)\]]+/g) || [];
+  for (const raw of absoluteMatches.slice(0, 1200)) {
+    try {
+      const url = new URL(raw);
+      url.hash = '';
+      if (url.origin !== base.origin) continue;
+      if (!isUsefulRoutePath(url.pathname)) continue;
+      routes.push(discoveryCandidate(cleanQueryForAudit(url.href), source, 1));
+    } catch {}
+  }
+
+  const pathMatches = body.match(/(?:["'`(=:\[,]|\bpath\s*:\s*)\s*(\/[A-Za-z0-9][A-Za-z0-9/_~.%?=&+#:@-]{0,155})/g) || [];
+  for (const match of pathMatches.slice(0, 1800)) {
+    const extracted = match.replace(/^[^/]+/, '').replace(/["'`,)\]}]+$/g, '');
+    if (!isUsefulRoutePath(extracted)) continue;
+    try {
+      routes.push(discoveryCandidate(new URL(extracted, base.origin).href, source, 1));
+    } catch {}
+  }
+
+  return uniqueCandidates(routes, baseUrl);
+}
+
 function buildCommonRouteCandidates(baseUrl, options) {
   const base = new URL(baseUrl);
   const candidates = [];
   for (const route of COMMON_PUBLIC_ROUTES) {
     try {
       const url = new URL(route, base.origin).href;
-      if (!shouldSkipUrl(url, base.origin, options.includeList, options.excludeList)) {
-        candidates.push(discoveryCandidate(url, 'common-route', 1));
-      }
+      if (!shouldSkipUrl(url, base.origin, options.includeList, options.excludeList)) candidates.push(discoveryCandidate(url, 'common-route', 1));
     } catch {}
   }
   return uniqueCandidates(candidates, baseUrl);
@@ -170,6 +229,8 @@ function sourceFamily(source) {
   if (value === 'homepage-link') return 'homepage-link';
   if (value === 'crawl-link') return 'crawl-link';
   if (value === 'crawl-seed') return 'crawl-seed';
+  if (value === 'bundle-route') return 'bundle-route';
+  if (value === 'app-data') return 'app-data';
   if (value === 'manual') return 'manual';
   if (value.includes('fallback')) return 'fallback';
   return value || 'unknown';
@@ -199,6 +260,7 @@ function discoveryQuality({ mode, included, rejected, diagnostics }) {
   const sourceKinds = Object.keys(sourceMap);
   const sitemapHits = diagnostics?.sitemap?.urlsFound || 0;
   const crawlPages = diagnostics?.crawl?.pagesCrawled || 0;
+  const bundleRoutes = diagnostics?.crawl?.bundleRoutesFound || 0;
   const recommendations = [];
 
   let level = 'weak';
@@ -216,6 +278,7 @@ function discoveryQuality({ mode, included, rejected, diagnostics }) {
 
   if (mode === 'sitemap' && !sitemapHits) recommendations.push('No useful XML sitemap URLs were found. Try Auto so SiteShot can combine sitemap checks with public navigation crawling.');
   if (mode === 'auto' && !sitemapHits) recommendations.push('No usable sitemap URLs were found, so Auto relied on crawling and common public route checks.');
+  if (mode === 'auto' && bundleRoutes) recommendations.push(`Auto found ${bundleRoutes} candidate route(s) inside app scripts or page data.`);
   if (includedCount < 3) recommendations.push('Discovery found very few pages. The site may be app-driven, blocked, auth-gated or using routes hidden from public navigation.');
   if (rejected.length > includedCount * 2) recommendations.push('Many candidates were rejected. Check exclude rules, trailing-slash redirects and whether the site returns visible not-found pages.');
   if (!crawlPages && mode === 'auto') recommendations.push('Auto could not crawl public pages successfully. Try lowering depth or checking whether the target blocks browser automation.');
@@ -236,14 +299,7 @@ async function tryRoute(page, url) {
     await waitForDiscoveryCandidate(page, 150);
     const status = response?.status() ?? 0;
     const notFoundLike = await looksLikeNotFoundPage(page);
-    return {
-      requestedUrl: url,
-      finalUrl: canonicaliseAuditUrl(page.url()),
-      status,
-      ok: status > 0 && status < 400 && !notFoundLike,
-      notFoundLike,
-      reason: status >= 400 ? `HTTP ${status}` : notFoundLike ? 'Visible not-found page' : 'OK'
-    };
+    return { requestedUrl: url, finalUrl: canonicaliseAuditUrl(page.url()), status, ok: status > 0 && status < 400 && !notFoundLike, notFoundLike, reason: status >= 400 ? `HTTP ${status}` : notFoundLike ? 'Visible not-found page' : 'OK' };
   } catch (error) {
     return { requestedUrl: url, finalUrl: url, status: 0, ok: false, error: error.message, reason: error.message };
   }
@@ -253,36 +309,16 @@ async function validateCandidate(browser, options, candidate) {
   const canonical = normalisePageUrl(options.url, candidate.url);
   const slash = withTrailingSlash(canonical);
   const variants = [...new Set([canonical, slash])];
-
   const page = await browser.newPage();
   try {
     const attempts = [];
     for (const variant of variants) {
       const result = await tryRoute(page, variant);
       attempts.push(result);
-      if (result.ok) {
-        return {
-          url: result.finalUrl,
-          requestedUrl: candidate.url,
-          status: result.status,
-          source: candidate.source,
-          depth: candidate.depth,
-          included: true,
-          reason: result.finalUrl !== canonical ? `Resolved to ${result.finalUrl}` : 'OK'
-        };
-      }
+      if (result.ok) return { url: result.finalUrl, requestedUrl: candidate.url, status: result.status, source: candidate.source, depth: candidate.depth, included: true, reason: result.finalUrl !== canonical ? `Resolved to ${result.finalUrl}` : 'OK' };
     }
-
     const best = attempts.find(a => a.status && a.status < 500) || attempts[0] || {};
-    return {
-      url: best.finalUrl || canonical,
-      requestedUrl: candidate.url,
-      status: best.status || 0,
-      source: candidate.source,
-      depth: candidate.depth,
-      included: false,
-      reason: best.reason || best.error || 'Route did not validate'
-    };
+    return { url: best.finalUrl || canonical, requestedUrl: candidate.url, status: best.status || 0, source: candidate.source, depth: candidate.depth, included: false, reason: best.reason || best.error || 'Route did not validate' };
   } finally {
     await page.close().catch(() => {});
   }
@@ -346,12 +382,7 @@ async function revealNavigationControls(page) {
 
   for (const selector of selectors) {
     let handles = [];
-    try {
-      handles = await page.$$(selector);
-    } catch {
-      continue;
-    }
-
+    try { handles = await page.$$(selector); } catch { continue; }
     for (const handle of handles.slice(0, 8)) {
       try {
         const box = await handle.boundingBox();
@@ -363,10 +394,43 @@ async function revealNavigationControls(page) {
   }
 }
 
+async function harvestAppRouteCandidates(page, baseUrl, includeList, excludeList) {
+  const base = new URL(baseUrl);
+  const found = [];
+  const data = await page.evaluate(() => {
+    const scripts = [...document.scripts].map(script => ({ src: script.src || '', text: script.src ? '' : (script.textContent || '').slice(0, 120000) }));
+    const pageData = [
+      document.querySelector('#__NEXT_DATA__')?.textContent || '',
+      document.querySelector('[id="__NUXT_DATA__"]')?.textContent || '',
+      document.documentElement?.outerHTML?.slice(0, 250000) || ''
+    ].join('\n');
+    return { scripts, pageData };
+  });
+
+  for (const item of routeStringsFromText(data.pageData, baseUrl, 'app-data')) found.push(item);
+  for (const script of (data.scripts || []).slice(0, 80)) {
+    if (script.text) {
+      for (const item of routeStringsFromText(script.text, baseUrl, 'app-data')) found.push(item);
+      continue;
+    }
+    if (!script.src) continue;
+    try {
+      const src = new URL(script.src, base.origin);
+      if (src.origin !== base.origin) continue;
+      if (!/\.m?js(?:$|[?#])/i.test(src.pathname)) continue;
+      const text = await fetchText(page.request, src.href, 15000);
+      for (const item of routeStringsFromText(text || '', baseUrl, 'bundle-route')) found.push(item);
+    } catch {}
+  }
+
+  return uniqueCandidates(found.filter(item => {
+    try { return !shouldSkipUrl(item.url, base.origin, includeList, excludeList); } catch { return false; }
+  }), baseUrl);
+}
+
 export async function collectLinks(page, baseUrl, includeList, excludeList) {
   const base = new URL(baseUrl);
   const currentUrl = page.url() || base.href;
-
   const links = await page.evaluate(() => {
     const found = new Set();
     const push = value => {
@@ -375,32 +439,32 @@ export async function collectLinks(page, baseUrl, includeList, excludeList) {
       if (!trimmed || trimmed === '#' || trimmed.startsWith('javascript:') || trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) return;
       found.add(trimmed);
     };
-
     document.querySelectorAll('a[href],area[href]').forEach(el => push(el.getAttribute('href') || el.href));
     document.querySelectorAll('link[rel~="canonical"][href],link[rel~="alternate"][href],meta[property="og:url"][content]').forEach(el => push(el.getAttribute('href') || el.getAttribute('content')));
     document.querySelectorAll('form[action]').forEach(el => push(el.getAttribute('action')));
     document.querySelectorAll('[data-href],[data-url],[data-link],[data-to],[to],[href]').forEach(el => {
-      for (const attr of ['data-href','data-url','data-link','data-to','to','href']) push(el.getAttribute(attr));
+      for (const attr of ['data-href', 'data-url', 'data-link', 'data-to', 'to', 'href']) push(el.getAttribute(attr));
     });
-
-    for (const script of [...document.scripts].slice(0, 40)) {
-      const text = script.textContent || '';
-      const matches = text.match(/https?:\/\/[^"'\\\s<>]+|\/[A-Za-z0-9][^"'\\\s<>]{1,180}/g) || [];
-      for (const match of matches.slice(0, 250)) push(match);
-    }
-
+    document.querySelectorAll('[onclick],[x-on\\:click],[data-route],[data-path]').forEach(el => {
+      for (const attr of ['onclick', 'x-on:click', 'data-route', 'data-path']) push(el.getAttribute(attr));
+    });
     return [...found];
   });
 
   const clean = [];
   for (const href of links) {
     try {
+      const routeText = href.includes('/') && !/^https?:\/\//i.test(href) ? routeStringsFromText(href, baseUrl, 'app-data') : [];
+      for (const item of routeText) clean.push(item.url);
       const url = new URL(href, currentUrl);
       url.hash = '';
       const normal = cleanQueryForAudit(url.href);
       if (!shouldSkipUrl(normal, base.origin, includeList, excludeList)) clean.push(canonicaliseAuditUrl(normal));
     } catch {}
   }
+
+  const appRoutes = await harvestAppRouteCandidates(page, baseUrl, includeList, excludeList).catch(() => []);
+  for (const item of appRoutes) clean.push(item.url);
 
   return [...new Set(clean)];
 }
@@ -412,11 +476,7 @@ async function fetchText(request, url, timeout = 12000) {
     const body = await response.body();
     const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
     if (/\.gz(?:$|[?#])/i.test(url)) {
-      try {
-        return gunzipSync(buffer).toString('utf8');
-      } catch {
-        return buffer.toString('utf8');
-      }
+      try { return gunzipSync(buffer).toString('utf8'); } catch { return buffer.toString('utf8'); }
     }
     return buffer.toString('utf8');
   } catch {
@@ -433,27 +493,14 @@ async function sitemapUrlsFromRobots(request, baseUrl) {
   const robotsUrl = `${base.origin}/robots.txt`;
   const txt = await fetchText(request, robotsUrl);
   if (!txt) return [];
-  return txt.split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => /^sitemap\s*:/i.test(line))
-    .map(line => line.replace(/^sitemap\s*:/i, '').trim())
-    .map(value => {
-      try { return new URL(value, base.origin).href; } catch { return ''; }
-    })
-    .filter(Boolean);
+  return txt.split(/\r?\n/).map(line => line.trim()).filter(line => /^sitemap\s*:/i.test(line)).map(line => line.replace(/^sitemap\s*:/i, '').trim()).map(value => {
+    try { return new URL(value, base.origin).href; } catch { return ''; }
+  }).filter(Boolean);
 }
 
 async function collectSitemapCandidates(request, baseUrl, options, maxSitemaps = 35) {
   const base = new URL(baseUrl);
-  const discoveredSitemaps = [
-    `${base.origin}/sitemap.xml`,
-    `${base.origin}/sitemap_index.xml`,
-    `${base.origin}/sitemap-index.xml`,
-    `${base.origin}/sitemap/sitemap.xml`,
-    `${base.origin}/wp-sitemap.xml`,
-    ...(await sitemapUrlsFromRobots(request, baseUrl))
-  ];
-
+  const discoveredSitemaps = [`${base.origin}/sitemap.xml`, `${base.origin}/sitemap_index.xml`, `${base.origin}/sitemap-index.xml`, `${base.origin}/sitemap/sitemap.xml`, `${base.origin}/wp-sitemap.xml`, ...(await sitemapUrlsFromRobots(request, baseUrl))];
   const queue = [...new Set(discoveredSitemaps)];
   const visited = new Set();
   const candidates = [];
@@ -464,13 +511,10 @@ async function collectSitemapCandidates(request, baseUrl, options, maxSitemaps =
     if (!sitemapUrl || visited.has(sitemapUrl)) continue;
     visited.add(sitemapUrl);
     diagnostics.sitemapsTried.push(sitemapUrl);
-
     const xml = await fetchText(request, sitemapUrl);
     if (!xml) continue;
-
     const locs = locsFromXml(xml);
     if (locs.length) diagnostics.sitemapsWithLocs.push({ url: sitemapUrl, locs: locs.length });
-
     for (const loc of locs) {
       try {
         const locUrl = new URL(loc, base.origin);
@@ -482,7 +526,6 @@ async function collectSitemapCandidates(request, baseUrl, options, maxSitemaps =
           }
           continue;
         }
-
         const clean = cleanQueryForAudit(locUrl.href);
         if (!shouldSkipUrl(clean, base.origin, options.includeList, options.excludeList)) {
           diagnostics.urlsFound += 1;
@@ -495,7 +538,6 @@ async function collectSitemapCandidates(request, baseUrl, options, maxSitemaps =
       }
     }
   }
-
   return { candidates: uniqueCandidates(candidates, baseUrl), diagnostics };
 }
 
@@ -504,10 +546,8 @@ async function crawlCandidates(browser, options, startUrls = []) {
   const seed = startUrls.length ? startUrls : [target.href];
   const discovered = new Map();
   const queue = seed.map(url => ({ url: canonicaliseAuditUrl(url), depth: 0 }));
-  const diagnostics = { pagesCrawled: 0, linksFound: 0, failed: [], seedCount: queue.length };
-
+  const diagnostics = { pagesCrawled: 0, linksFound: 0, bundleRoutesFound: 0, failed: [], seedCount: queue.length };
   for (const item of queue) discovered.set(item.url, discoveryCandidate(item.url, 'crawl-seed', 0));
-
   const crawlPage = await browser.newPage();
 
   while (queue.length && discovered.size <= options.maxPages * 5) {
@@ -519,12 +559,15 @@ async function crawlCandidates(browser, options, startUrls = []) {
       await waitForPage(crawlPage, 400);
       await revealNavigationControls(crawlPage);
       const links = await collectLinks(crawlPage, options.url, options.includeList, options.excludeList);
+      const appRoutes = await harvestAppRouteCandidates(crawlPage, options.url, options.includeList, options.excludeList).catch(() => []);
       diagnostics.pagesCrawled += 1;
       diagnostics.linksFound += links.length;
-      for (const link of links) {
+      diagnostics.bundleRoutesFound += appRoutes.length;
+      for (const link of [...links, ...appRoutes.map(item => item.url)]) {
         if (discovered.size >= options.maxPages * 5) break;
         if (!discovered.has(link)) {
-          discovered.set(link, discoveryCandidate(link, current.depth === 0 ? 'homepage-link' : 'crawl-link', current.depth + 1));
+          const fromBundle = appRoutes.some(item => item.url === link);
+          discovered.set(link, discoveryCandidate(link, fromBundle ? 'bundle-route' : current.depth === 0 ? 'homepage-link' : 'crawl-link', current.depth + 1));
           queue.push({ url: link, depth: current.depth + 1 });
         }
       }
@@ -582,14 +625,7 @@ export async function discoverPageCandidates(browser, options) {
   const validated = await validateCandidates(browser, options, candidates);
   const included = validated.included;
   const allRejected = [...rejected, ...validated.rejected];
-  return {
-    mode,
-    included,
-    rejected: allRejected,
-    diagnostics,
-    summary: { candidates: candidates.length, included: included.length, rejected: allRejected.length, sources: Object.keys(sourceCounts(included)) },
-    quality: discoveryQuality({ mode, included, rejected: allRejected, diagnostics })
-  };
+  return { mode, included, rejected: allRejected, diagnostics, summary: { candidates: candidates.length, included: included.length, rejected: allRejected.length, sources: Object.keys(sourceCounts(included)) }, quality: discoveryQuality({ mode, included, rejected: allRejected, diagnostics }) };
 }
 
 export async function discoverPages(browser, options) {
@@ -600,17 +636,14 @@ export async function discoverPages(browser, options) {
     console.log(`Using ${selected.length} reviewed/manual page(s) supplied by the UI.`);
     return selected;
   }
-
   const discovery = await discoverPageCandidates(browser, options);
   if (!discovery.included.length) {
     console.log(`No valid pages discovered for ${options.url}; falling back to target URL.`);
     return [canonicaliseAuditUrl(options.url)];
   }
-
   for (const item of discovery.included) if (item.requestedUrl !== item.url) console.log(`Using ${item.url} (${item.source}; ${item.reason})`);
   if (discovery.rejected.length) console.log(`Rejected ${discovery.rejected.length} invalid/duplicate/non-auditable URL(s).`);
   if (discovery.quality?.message) console.log(discovery.quality.message);
   for (const recommendation of discovery.quality?.recommendations || []) console.log(`Discovery recommendation: ${recommendation}`);
-
   return discovery.included.map(item => item.url).slice(0, options.maxPages);
 }
