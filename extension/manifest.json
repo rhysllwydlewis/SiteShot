@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "SiteShot Auditor Studio Ultra Companion",
+  "version": "3.0.0",
+  "description": "Companion extension for SiteShot Auditor Studio Ultra.",
+  "permissions": [
+    "activeTab",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SiteShot Auditor Ultra"
+  }
+}

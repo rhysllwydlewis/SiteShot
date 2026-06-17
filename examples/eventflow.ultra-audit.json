@@ -1,0 +1,100 @@
+{
+  "name": "EventFlow Ultra Website Audit",
+  "url": "https://event-flow.co.uk",
+  "out": "audit/eventflow-ultra",
+  "devices": [
+    "iphone-se",
+    "iphone-14",
+    "iphone-pro-max",
+    "galaxy-s21",
+    "ipad",
+    "desktop"
+  ],
+  "pages": [
+    "/",
+    "/start",
+    "/suppliers",
+    "/public-calendar",
+    "/marketplace",
+    "/guides",
+    "/pricing",
+    "/for-suppliers",
+    "/faq",
+    "/auth",
+    "/contact",
+    "/legal",
+    "/privacy",
+    "/terms",
+    "/forgot-password",
+    "/reset-password",
+    "/verify"
+  ],
+  "maxPages": 80,
+  "depth": 2,
+  "modules": [
+    "visual",
+    "functionality",
+    "seo",
+    "accessibility",
+    "performance",
+    "security",
+    "privacy",
+    "content",
+    "technical"
+  ],
+  "reportStyle": "full",
+  "capture": {
+    "initial": true,
+    "fullPage": true,
+    "menu": true,
+    "interactions": true,
+    "acceptCookies": false,
+    "hideOverlays": false
+  },
+  "waitMs": 1200,
+  "exclude": [
+    "/admin",
+    "/dashboard",
+    "/api",
+    "/assets",
+    "/uploads",
+    "/logout"
+  ],
+  "flagText": [
+    "Dashboard Log out",
+    "Mark all as read",
+    "Version: loading",
+    "pending_review",
+    "rejected",
+    "lorem ipsum",
+    "TODO",
+    "test mode"
+  ],
+  "budgets": {
+    "maxHorizontalOverflowPx": 8,
+    "minTapTargetPx": 40,
+    "largeImageBytes": 500000,
+    "largeScriptBytes": 750000,
+    "largeCssBytes": 250000,
+    "maxRequests": 120,
+    "maxDomNodes": 2500,
+    "maxPageHeight": 12000,
+    "maxConsoleErrors": 0,
+    "maxFailedRequests": 0
+  },
+  "security": {
+    "checkCommonExposures": true,
+    "commonExposurePaths": [
+      "/.env",
+      "/.git/config",
+      "/server-status",
+      "/debug",
+      "/backup.zip",
+      "/db.sql",
+      "/database.sql",
+      "/config.php",
+      "/phpinfo.php",
+      "/.well-known/security.txt"
+    ]
+  }
+}

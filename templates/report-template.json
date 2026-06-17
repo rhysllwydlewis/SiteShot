@@ -1,0 +1,37 @@
+{
+  "brand": {
+    "name": "SiteShot Auditor Studio",
+    "accent": "#0f766e"
+  },
+  "sections": [
+    "Executive Summary",
+    "Audit Scope",
+    "Overall Score",
+    "Category Scores",
+    "Risk Register",
+    "Critical/High Findings",
+    "Fix Roadmap",
+    "Page-by-Page Findings",
+    "Screenshot Evidence",
+    "Technical Appendix",
+    "Safety Statement"
+  ],
+  "severityOrder": [
+    "Critical",
+    "High",
+    "Medium",
+    "Low",
+    "Info"
+  ],
+  "categories": [
+    "Security",
+    "Privacy",
+    "Accessibility",
+    "SEO",
+    "Performance",
+    "Mobile UX",
+    "Functionality",
+    "Content / Trust",
+    "Technical"
+  ]
+}

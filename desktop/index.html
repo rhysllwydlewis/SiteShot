@@ -1,0 +1,1416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SiteShot Auditor Studio Ultra</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --bg:#07111c;--panel:#111b29;--line:#26364a;--line2:#31445b;--text:#f4f8ff;--muted:#a8b4c4;--faint:#728196;
+  --blue:#2f7df6;--blue2:#1956b8;--green:#2bd66f;--amber:#f2a93b;--red:#e75345;--shadow:0 18px 55px rgba(0,0,0,.32);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#060d17,#0a1623 42%,#07111c);color:var(--text);overflow:hidden}
+.window{height:100vh;display:grid;grid-template-columns:250px 1fr;min-height:0}
+.sidebar{border-right:1px solid var(--line);background:linear-gradient(180deg,#081421,#07111c);padding:22px 12px;position:relative;overflow-y:auto;min-height:0}
+.brand{display:flex;gap:12px;align-items:center;margin:4px 8px 20px}.logo{width:48px;height:48px;border:3px solid #2f7df6;clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%);display:grid;place-items:center;color:#4ca0ff;font-size:28px;font-weight:900}.brand-title{font-size:18px;font-weight:850;line-height:1.05}.brand-sub{font-size:18px;color:#2f7df6;font-weight:700;margin-top:4px}.version-pill{display:inline-flex;margin-top:7px;padding:3px 8px;border:1px solid #2f7df6;border-radius:999px;color:#9bc7ff;font-size:12px;background:#0b1a2b}
+.nav{display:grid;gap:8px}.nav-item{height:54px;border-radius:6px;display:flex;align-items:center;gap:16px;padding:0 22px;color:#f0f5fb;font-size:16px;cursor:pointer}.nav-item.active{background:linear-gradient(135deg,#2f7df6,#1555ad)}.nav-item:not(.active):hover{background:rgba(255,255,255,.045)}
+.side-stack{position:absolute;left:12px;right:12px;bottom:22px;display:grid;gap:10px}.side-card{border:1px solid var(--line);border-radius:6px;background:linear-gradient(180deg,#111c2b,#0c1623);padding:16px}.side-card .cap{color:#aab6c7;text-transform:uppercase;font-size:12px;letter-spacing:.04em;margin-bottom:12px}.side-card .big{font-size:16px;margin-bottom:9px}.side-card .small{color:#aab6c7;font-size:14px}.help-card{border:1px solid var(--line);border-radius:6px;background:#0d1725;padding:13px;display:flex;gap:12px;align-items:center;cursor:pointer}.help-icon{width:26px;height:26px;border:1px solid #9aa7b8;border-radius:50%;display:grid;place-items:center;color:#c9d2df;font-weight:800}.help-title{font-size:14px}.help-link{font-size:12px;color:#49a2ff;text-decoration:underline;margin-top:3px}.sidebar-foot{color:#8d9bac;font-size:14px}.up{display:flex;gap:8px;align-items:center;margin-top:9px;color:#9fb0c3}.up-dot{width:8px;height:8px;background:#2bd66f;border-radius:50%}
+.main{display:grid;grid-template-rows:92px 1fr;min-height:0;background:rgba(255,255,255,.01)}
+.topbar{display:grid;grid-template-columns:64px 220px minmax(160px,1fr) 150px 170px 150px minmax(110px,.7fr) 52px 52px 52px;align-items:center;border-bottom:1px solid #1a2a3d;background:linear-gradient(180deg,#111c2b,#0c1622);padding:0 22px;-webkit-app-region:drag}.topbar *{-webkit-app-region:no-drag}.menu-icon{font-size:30px;color:#cbd4e2}.top-cell{height:52px;border-left:1px solid #223146;padding-left:24px;min-width:0}.top-label{font-size:12px;color:#dbe4f0;margin-bottom:8px}.top-value{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top-value.link{color:#49a2ff}.top-value.version{color:#9bc7ff;font-weight:800}.ready{display:flex;align-items:center;gap:10px;justify-content:center;color:#d7f9dc;font-size:15px}.ready .dot{width:12px;height:12px;border-radius:50%;background:#2bd66f}.icon-btn{width:42px;height:42px;border:1px solid var(--line);border-radius:5px;display:grid;place-items:center;color:#cbd4e2;background:#0b1522;cursor:pointer}
+.content{padding:10px 12px;display:grid;grid-template-columns:1fr 340px;gap:12px;overflow:hidden;min-height:0}.workspace{overflow-y:scroll;overflow-x:hidden;padding-right:2px;min-height:0}.rightcol{display:grid;grid-template-rows:minmax(440px,1fr) 364px 96px;gap:8px;overflow-y:auto;min-height:0}.workspace::-webkit-scrollbar,.rightcol::-webkit-scrollbar,.logbox pre::-webkit-scrollbar,.sidebar::-webkit-scrollbar{width:10px}.workspace::-webkit-scrollbar-thumb,.rightcol::-webkit-scrollbar-thumb,.logbox pre::-webkit-scrollbar-thumb,.sidebar::-webkit-scrollbar-thumb{background:#34465e;border-radius:8px}.workspace::-webkit-scrollbar-track,.rightcol::-webkit-scrollbar-track{background:#07111c}
+.panel{border:1px solid var(--line);border-radius:6px;background:linear-gradient(180deg,rgba(20,31,45,.98),rgba(12,22,35,.98));box-shadow:var(--shadow)}.panel + .panel{margin-top:8px}.panel-inner{padding:12px 16px}.section-title{font-size:16px;font-weight:800;margin-bottom:12px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+label{display:block;font-size:13px;margin:0 0 7px;color:#f2f5f8}.input,.textarea,.select{border:1px solid var(--line2);background:#0b1521;color:#f3f7fb;border-radius:4px;min-height:32px;padding:8px 12px;font-size:14px;width:100%;outline:none}.textarea{height:118px;line-height:1.45;resize:vertical}.field{margin-bottom:12px}.browse-row{display:grid;grid-template-columns:1fr 116px;gap:10px}.btn-small,.mini-btn{border:1px solid var(--line2);background:#172335;color:#e8eef8;border-radius:4px;padding:8px 14px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:pointer}.mini-btn{height:34px;margin-right:8px;margin-top:8px}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line2);border-radius:5px;overflow:hidden}.tab{height:34px;display:grid;place-items:center;background:#101b2a;border-right:1px solid var(--line2);font-size:13px;cursor:pointer}.tab:last-child{border-right:none}.tab.active{background:#1556ad;color:#fff}.note{font-size:13px;color:#49a2ff;margin-top:6px}.inline3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.cards-row{display:grid;grid-template-columns:1.25fr 1fr 1.7fr;gap:8px;margin-top:8px}.subpanel{border:1px solid var(--line);border-radius:6px;background:#111c2b;padding:14px 16px}.device-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px}
+.check-row{display:flex;gap:11px;align-items:center;min-width:0;cursor:pointer}.check{display:none}.checkbox{width:16px;height:16px;border-radius:3px;background:#2f7df6;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:900;flex:0 0 auto;border:1px solid #2f7df6}.check:not(:checked)+.checkbox{background:#0b1522;border-color:#4b5e75;color:transparent}.device-icon{width:26px;height:22px;border:2px solid #b9c5d2;border-radius:2px;position:relative;flex:0 0 auto}.device-icon:after{content:"";position:absolute;left:8px;right:8px;bottom:-6px;height:2px;background:#b9c5d2}.phone{width:14px;height:28px;border:2px solid #b9c5d2;border-radius:3px;flex:0 0 auto}.item-main{font-size:13px}.item-sub{font-size:11px;color:#9ba8b9;margin-top:2px}
+.radio-row{display:flex;gap:10px;margin:10px 0 14px;align-items:flex-start;cursor:pointer}.radio-row input{display:none}.radio{width:16px;height:16px;border-radius:50%;border:1px solid #8ea0b5;flex:0 0 auto;margin-top:2px}.radio-row input:checked+.radio{border:4px solid #2f7df6;box-shadow:0 0 0 1px #90b8ff}.radio-title{font-size:14px}.radio-sub{font-size:11px;color:#9ba8b9;margin-top:2px}
+.modules{padding:12px 16px;border-top:1px solid var(--line)}.module-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px 26px}.module{display:grid;grid-template-columns:18px 36px 1fr;gap:10px;align-items:center;cursor:pointer}.module-icon{font-size:27px;line-height:1;text-align:center}.module-title{font-size:14px;font-weight:750}.module-sub{font-size:11px;color:#9ba8b9;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.capture-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 130px;gap:20px;align-items:center}.wait-input{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center}.num-input{height:32px;border:1px solid var(--line2);background:#0b1521;color:#fff;border-radius:4px;padding:0 8px}
+.permissions{display:grid;grid-template-columns:1fr 270px 122px;gap:12px;align-items:center}.permission-text{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.primary{height:48px;border:0;border-radius:6px;background:linear-gradient(135deg,#2f7df6,#185bd2);color:#fff;font-size:16px;font-weight:800;cursor:pointer}.primary:disabled{opacity:.45;cursor:not-allowed}.stop{height:48px;border:1px solid #37485b;border-radius:6px;background:#1c2a3b;color:#6f7d90;font-size:16px;font-weight:800;cursor:not-allowed}.stop.enabled{background:#441b1b;color:#ffb0aa;border-color:#b84238;cursor:pointer}
+.logbox{border:1px solid var(--line);border-radius:6px;background:linear-gradient(180deg,#111c2b,#0c1623);overflow:hidden}.log-head{height:40px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:15px;font-weight:800}.log-status{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}.log-status .dot{width:8px;height:8px;border-radius:50%;background:#2bd66f}.logbox pre{margin:0;padding:12px 16px;height:322px;overflow:auto;background:#09111c;border:1px solid #1f2c3d;border-radius:4px;margin:0 8px 8px;font:13px/1.42 Consolas,"Cascadia Mono",monospace;color:#d6deeb}.progress{padding:0 16px 12px}.p-row{display:flex;justify-content:space-between;font-size:13px;margin:8px 0}.bar{height:10px;background:#243246;border-radius:999px;overflow:hidden}.bar-fill{height:100%;width:0%;background:#2f7df6;border-radius:999px}.divider{height:1px;background:var(--line);margin:12px 0}
+.report-buttons{padding:13px 16px}.report-title{font-size:15px;font-weight:800;margin-bottom:12px}.report-btn{height:32px;border:1px solid var(--line2);background:#172335;color:#9daab9;border-radius:4px;margin-bottom:7px;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:13px;cursor:not-allowed}.report-btn.enabled{color:#e8eef8;cursor:pointer;background:#1b2a3e}.tip{border:1px solid var(--line);border-radius:6px;background:#111c2b;padding:18px;display:flex;gap:12px;align-items:flex-start;color:#c7d2df;font-size:14px}.bulb{font-size:24px;color:#f2c94c}.dim{color:#9daab9}a{color:#49a2ff;text-decoration:none}
+.view{display:none}.view.active{display:block}.placeholder{padding:22px;color:#cbd4e2}.placeholder h2{margin-top:0}.placeholder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:14px}.placeholder-card{border:1px solid var(--line);border-radius:6px;background:#0d1725;padding:16px;min-height:92px}.list{display:grid;gap:10px;margin-top:14px}.list-item{border:1px solid var(--line);border-radius:6px;background:#0d1725;padding:14px}.list-item h3{margin:0 0 8px;font-size:15px}.list-item p{margin:4px 0;color:#a8b4c4;font-size:13px}.custom-row{display:grid;grid-template-columns:1fr 82px 82px;gap:8px;margin-top:10px}
+@media(max-width:1300px){.window{grid-template-columns:220px 1fr}.content{grid-template-columns:1fr}.rightcol{display:none}}
+
+/* v3.2.23 additions */
+body.sidebar-collapsed .window{grid-template-columns:76px 1fr}
+body.sidebar-collapsed .sidebar{padding-left:8px;padding-right:8px}
+body.sidebar-collapsed .brand{justify-content:center;margin-left:0;margin-right:0}
+body.sidebar-collapsed .brand .brand-title,
+body.sidebar-collapsed .brand .brand-sub,
+body.sidebar-collapsed .brand .version-pill,
+body.sidebar-collapsed .nav-item span,
+body.sidebar-collapsed .side-stack{display:none}
+body.sidebar-collapsed .nav-item{justify-content:center;padding:0;font-size:20px}
+body.sidebar-collapsed .logo{width:42px;height:42px;font-size:24px}
+.log-expand{border:1px solid var(--line2);background:#172335;color:#e8eef8;border-radius:4px;padding:5px 8px;font-size:12px;cursor:pointer;margin-right:8px}
+.log-modal{position:fixed;inset:0;background:rgba(3,8,14,.72);display:none;z-index:99;align-items:center;justify-content:center;padding:28px}
+.log-modal.open{display:flex}
+.log-modal-card{width:min(1280px,96vw);height:min(860px,92vh);background:#0b1521;border:1px solid var(--line2);border-radius:12px;box-shadow:0 26px 80px rgba(0,0,0,.55);display:grid;grid-template-rows:56px 1fr}
+.log-modal-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:0 18px}
+.log-modal-head h2{font-size:18px;margin:0}
+.log-modal-close{border:1px solid var(--line2);background:#172335;color:#fff;border-radius:6px;padding:8px 12px;cursor:pointer}
+.log-modal pre{margin:0;padding:18px;overflow:auto;background:#050c14;color:#d6deeb;font:14px/1.55 Consolas,"Cascadia Mono",monospace}
+.module-grid{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:1450px){.module-grid{grid-template-columns:1fr 1fr}.cards-row{grid-template-columns:1fr}.capture-grid{grid-template-columns:1fr 1fr}}
+
+
+/* v3.2.23 report actions */
+.report-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.report-select{width:17px;height:17px;accent-color:#2f7df6}
+.danger-btn{border:1px solid #8f3a35;background:#3a1718;color:#ffcac6;border-radius:4px;padding:8px 12px;font-size:13px;cursor:pointer}
+.danger-btn:disabled{opacity:.45;cursor:not-allowed}
+.confirm-modal{position:fixed;inset:0;background:rgba(3,8,14,.74);display:none;z-index:120;align-items:center;justify-content:center;padding:28px}
+.confirm-modal.open{display:flex}
+.confirm-card{width:min(560px,94vw);background:#0b1521;border:1px solid var(--line2);border-radius:12px;box-shadow:0 26px 80px rgba(0,0,0,.55);padding:22px}
+.confirm-card h2{margin:0 0 10px;font-size:20px}
+.confirm-card p{color:#b8c5d5;line-height:1.45}
+.confirm-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.secondary-btn{border:1px solid var(--line2);background:#172335;color:#fff;border-radius:5px;padding:10px 14px;cursor:pointer}
+
+
+/* v3.2.23 discovery */
+.tabs.four{grid-template-columns:1fr 1fr 1fr 1fr}
+.discovery-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.discovery-panel{display:none;margin-top:10px;border:1px solid var(--line2);border-radius:6px;background:#0b1521;overflow:hidden}
+.discovery-panel.open{display:block}
+.discovery-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;color:#cbd8e8}
+.discovery-list{max-height:250px;overflow:auto;padding:8px;display:grid;gap:6px}
+.discovery-row{display:grid;grid-template-columns:22px 1fr 72px 100px;gap:8px;align-items:center;border:1px solid #24364b;border-radius:5px;padding:7px;background:#0f1b2a;font-size:12px}
+.discovery-row.rejected{opacity:.62}
+.discovery-url{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eaf2ff}
+.discovery-meta{color:#9fb0c3}
+.discovery-badge{border-radius:999px;padding:4px 7px;text-align:center;background:#18314f;color:#9fd0ff}
+.discovery-badge.bad{background:#3b1b21;color:#ffb3ae}
+.pages-disabled{opacity:.72}
+
+
+/* v3.2.23 audit/report type polish */
+.meta-badges{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+.meta-badge{display:inline-flex;align-items:center;border:1px solid #334760;background:#122237;color:#cfe1f5;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}
+.meta-badge.good{border-color:#1c785a;background:#0c312b;color:#8ff1c7}
+.report-style-note{font-size:12px;color:#9fb0c3;margin:0 0 12px;line-height:1.35}
+
+
+/* v3.2.23 default flow and button polish */
+.report-toolbar .mini-btn,
+.report-toolbar .danger-btn{
+  min-height:38px;
+  height:38px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  padding:0 16px;
+}
+.report-toolbar .danger-btn{margin-top:0}
+.discovery-empty-hint{color:#9fb0c3;font-size:12px;margin-top:6px}
+
+
+/* v3.2.23 same-version patch: hide manual page box in Auto Discover */
+#pages.auto-hidden{
+  display:none;
+}
+.auto-discover-hidden-note{
+  display:none;
+  margin-top:8px;
+  color:#9fb0c3;
+  font-size:12px;
+  line-height:1.35;
+}
+.auto-discover-hidden-note.show{
+  display:block;
+}
+
+
+.nav-ico svg{width:18px;height:18px;display:block;stroke:currentColor}
+.nav-ico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 20px}
+.topbar-btn svg,.mini-btn svg,.ghost-btn svg{width:16px;height:16px;display:block}
+.btn-spin{animation:sspin 0.9s linear infinite}
+@keyframes sspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.discovery-status{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid #28415e;background:#102338;border-radius:10px;color:#cfe1f5;font-size:12px;font-weight:600;min-height:38px}
+.discovery-status.ok{border-color:#1c785a;background:#0d2f28;color:#97f0ca}
+.discovery-status.muted{color:#9fb0c3}
+.discovery-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.discovery-actions .mini-btn{min-height:38px}
+
+
+/* v3.2.23 stability pass */
+.nav-ico{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px;color:currentColor}
+.nav-ico svg{width:20px;height:20px;display:block}
+.nav-item{gap:14px}
+.discovery-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.discovery-actions .mini-btn{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.discovery-status{min-height:40px;display:inline-flex;align-items:center;border:1px solid #28415e;background:#102338;color:#cfe1f5;border-radius:8px;padding:0 14px;font-size:12px;font-weight:700}
+.discovery-status.ok{border-color:#1c785a;background:#0d2f28;color:#97f0ca}
+.discovery-status.warn{border-color:#8a6b1f;background:#2e2511;color:#ffd98a}
+.discovery-status.error{border-color:#7c3030;background:#331519;color:#ffb5b5}
+.btn-label{display:inline-flex;align-items:center;gap:8px}
+.btn-label svg{width:16px;height:16px}
+.btn-spin{animation:sspin .85s linear infinite}
+@keyframes sspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+#pages.auto-hidden{display:none}
+
+
+/* v3.2.23 button wiring pass */
+.topbutton,.hamb,.help-card,.report-btn,.log-expand,.log-modal-close,.nav-item{cursor:pointer}
+.report-btn.enabled,.report-btn.force-clickable{opacity:1}
+body.sidebar-collapsed .window{grid-template-columns:76px 1fr}
+body.sidebar-collapsed .sidebar{padding-left:8px;padding-right:8px}
+body.sidebar-collapsed .brand{justify-content:center;margin-left:0;margin-right:0}
+body.sidebar-collapsed .brand .brand-title,
+body.sidebar-collapsed .brand .brand-sub,
+body.sidebar-collapsed .brand .version-pill,
+body.sidebar-collapsed .nav-item span,
+body.sidebar-collapsed .side-stack{display:none}
+body.sidebar-collapsed .nav-item{justify-content:center;padding:0;font-size:20px}
+
+
+/* v3.2.23 QA pass */
+body.sidebar-collapsed .nav-item .nav-ico{
+  display:inline-flex!important;
+}
+body.sidebar-collapsed .nav-item span:not(.nav-ico){
+  display:none!important;
+}
+body.sidebar-collapsed .nav-ico svg{
+  display:block!important;
+}
+.report-btn.disabled-note{
+  opacity:.72;
+}
+
+
+/* v3.2.23 final QA pass */
+.top-action,.menu-icon,.icon-btn,.report-btn,.mini-btn,.help-card,.nav-item{
+  -webkit-app-region:no-drag!important;
+}
+.ready .dot.running{background:#f5b84b}
+.ready .dot.error{background:#ff6b6b}
+
+
+/* v3.2.23 discovery panel tidy-up */
+.discovery-panel{
+  border-radius:10px;
+  background:linear-gradient(180deg,#0b1521,#09121e);
+}
+.discovery-head{
+  padding:12px 14px;
+  font-size:14px;
+}
+.discovery-head b{
+  font-size:15px;
+}
+.discovery-list{
+  max-height:310px;
+  padding:10px;
+  gap:8px;
+}
+.discovery-row{
+  grid-template-columns:28px minmax(0,1fr) 92px 112px;
+  min-height:48px;
+  border-radius:8px;
+  padding:10px 12px;
+  background:#101d2d;
+}
+.discovery-row.rejected{
+  opacity:1;
+  background:#111c2b;
+  border-color:#31425a;
+}
+.discovery-row.discovery-working{
+  grid-template-columns:28px minmax(0,1fr) 92px;
+}
+.discovery-row.discovery-error{
+  background:#171621;
+  border-color:#5b2b35;
+}
+.discovery-row.discovery-fallback{
+  background:#171d2b;
+  border-color:#5f4b22;
+}
+.discovery-url{
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  line-height:1.35;
+  color:#eaf2ff;
+  min-width:0;
+}
+.discovery-url .muted{
+  display:block;
+  color:#9fb0c3;
+  font-size:12px;
+  margin-top:3px;
+}
+.discovery-meta{
+  color:#9fb0c3;
+  font-size:12px;
+  text-align:left;
+}
+.discovery-badge{
+  min-width:72px;
+  border-radius:999px;
+  padding:5px 10px;
+  font-size:12px;
+  font-weight:800;
+}
+.discovery-badge.wait{
+  background:#16365c;
+  color:#a8d5ff;
+}
+.discovery-badge.good{
+  background:#123c32;
+  color:#98f2c9;
+}
+.discovery-badge.warn{
+  background:#3d3014;
+  color:#ffd98a;
+}
+.discovery-badge.bad{
+  background:#3b1b21;
+  color:#ffb3ae;
+}
+.discovery-x{
+  color:#ffb3ae;
+  font-weight:900;
+  text-align:center;
+}
+.discovery-spinner{
+  width:16px;
+  height:16px;
+  border:2px solid #29415d;
+  border-top-color:#79b8ff;
+  border-radius:999px;
+  animation:sspin .8s linear infinite;
+  margin:auto;
+}
+
+
+/* v3.2.23 simplified target/scope flow */
+.tabs.three{grid-template-columns:1fr 1fr 1fr}
+.discovery-actions button{display:none!important}
+.discovery-actions{margin-top:10px}
+.discovery-status{margin-top:0}
+.discovery-panel{margin-top:12px}
+#pages.auto-hidden{display:none}
+.auto-discover-hidden-note.show{display:block}
+
+
+/* v3.2.23 pre-merge scope polish */
+.scope-auto-running .discovery-panel{
+  box-shadow:0 0 0 1px rgba(47,125,246,.15),0 18px 50px rgba(0,0,0,.22);
+}
+#scopeHelp{line-height:1.45}
+#pages.pages-disabled{opacity:.88}
+
+
+/* v3.2.23 final Target & Scope polish */
+.tabs.three{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:0;
+  overflow:hidden;
+  border-radius:9px;
+  border:1px solid #263a55;
+  background:#08131f;
+}
+.tabs.three .tab{
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  border-right:1px solid #263a55;
+  font-weight:800;
+  letter-spacing:.01em;
+}
+.tabs.three .tab:last-child{border-right:0}
+.tabs.three .tab.active{
+  background:linear-gradient(180deg,#2467c8,#1d56a9);
+  color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+#scopeHelp{
+  margin-top:10px;
+  padding:10px 12px;
+  border:1px solid #1d3657;
+  border-radius:9px;
+  background:rgba(47,125,246,.07);
+  color:#a9d1ff;
+}
+#pagesLabel{
+  font-weight:900;
+}
+#autoHiddenNote{
+  margin:8px 0 0;
+  padding:9px 11px;
+  border:1px dashed #284667;
+  border-radius:8px;
+  background:rgba(255,255,255,.025);
+}
+.discovery-status{
+  width:max-content;
+  max-width:100%;
+  margin-top:10px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.discovery-panel.open{
+  border-color:#31557f;
+}
+.discovery-head{
+  background:rgba(47,125,246,.045);
+}
+.discovery-row{
+  align-items:center;
+}
+.discovery-row input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  accent-color:#2f7df6;
+}
+#pages.auto-hidden{
+  display:none!important;
+}
+.scope-auto-running #scopeHelp{
+  border-color:#285383;
+  background:rgba(47,125,246,.1);
+}
+.scope-auto-running .discovery-status{
+  border-color:#285383;
+}
+
+
+/* v3.2.23 tab wiring and Last Run polish */
+.tabs.three .tab.scope-loading{
+  position:relative;
+  gap:8px;
+  color:#fff;
+}
+.tabs.three .tab.scope-loading::before{
+  content:"";
+  width:14px;
+  height:14px;
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
+  border-radius:999px;
+  animation:sspin .75s linear infinite;
+  margin-right:7px;
+}
+.top-action.empty-state{
+  opacity:.88;
+}
+.top-action.empty-state:hover{
+  background:rgba(47,125,246,.08);
+}
+.last-run-empty-hint{
+  color:#9fb0c3;
+}
+
+
+/* v3.2.23 final verification polish */
+#sideLastRunCard{
+  cursor:pointer;
+  -webkit-app-region:no-drag!important;
+}
+#sideLastRunCard:focus-visible{
+  outline:2px solid #2f7df6;
+  outline-offset:2px;
+}
+#sideLastRunCard.empty-state{
+  opacity:.92;
+}
+
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">S</div><div><div class="brand-title">SiteShot Auditor</div><div class="brand-sub">Studio Ultra</div><div class="version-pill" id="versionPill">v3.2.23</div></div></div>
+    <nav class="nav">
+      <div class="nav-item active" data-view="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.4 12 4l8 6.4V20a1 1 0 0 1-1 1h-4.6v-6.1H9.6V21H5a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg></span><span>Dashboard</span></div>
+      <div class="nav-item" data-view="runs"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.8" width="15" height="15" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 12.5h6M8 16h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16.4 16.2l1.4 1.4 2.7-3.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Audit Runs</span></div>
+      <div class="nav-item" data-view="projects"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 8.5A1.7 1.7 0 0 1 5.5 6.8h4.2l1.35 1.8h7.45a1.7 1.7 0 0 1 1.7 1.7v7.2a1.7 1.7 0 0 1-1.7 1.7h-13a1.7 1.7 0 0 1-1.7-1.7Z" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round"/></svg></span><span>Projects</span></div>
+      <div class="nav-item" data-view="reports"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.8h7.1L18.5 8v11A1.2 1.2 0 0 1 17.3 20.2H7A1.2 1.2 0 0 1 5.8 19V5A1.2 1.2 0 0 1 7 3.8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3.8V8h4.2M9 11h6M9 14h6M9 17h3.7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span><span>Reports</span></div>
+      <div class="nav-item" data-view="templates"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 8.4h7.6M8.2 11.7h7.6M8.2 15h4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 4.5v15" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span>Templates</span></div>
+      <div class="nav-item" data-view="settings"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.7a3.3 3.3 0 1 0 0 6.6 3.3 3.3 0 0 0 0-6.6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m19.3 12 .8-1.7-1.55-2.7-1.95.2a7.6 7.6 0 0 0-1.25-.72l-.85-1.8h-3l-.85 1.8c-.45.18-.88.42-1.25.72l-1.95-.2-1.55 2.7.8 1.7-.8 1.7 1.55 2.7 1.95-.2c.37.3.8.54 1.25.72l.85 1.8h3l.85-1.8c.45-.18.88-.42 1.25-.72l1.95.2 1.55-2.7Z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/></svg></span><span>Settings</span></div>
+    </nav>
+    <div class="side-stack">
+      <div class="side-card top-action" id="sideLastRunCard" role="button" tabindex="0" title="Open Audit Runs"><div class="cap">Last run</div><div class="big" id="lastRunSide">Never</div><div class="small" id="lastRunDetail">No audits run yet</div></div>
+      <div class="help-card" id="helpCard" role="button" tabindex="0" title="Open help documentation"><div class="help-icon">?</div><div><div class="help-title">Need help?</div><div class="help-link">View guides & documentation</div></div></div>
+      <div class="sidebar-foot"><div id="versionText">v3.2.23 Ultra</div><div class="up"><span class="up-dot"></span>Up to date</div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="menu-icon" id="sidebarToggle" role="button" tabindex="0" title="Collapse or expand sidebar">≡</div>
+      <div class="top-cell top-action" id="topWorkspace" role="button" tabindex="0" title="Open Projects"><div class="top-label">Workspace</div><div class="top-value">Default Workspace⌄</div></div>
+      <div class="top-cell top-action" id="topTargetBox" role="button" tabindex="0" title="Focus Target URL"><div class="top-label">Target</div><div class="top-value link" id="topTarget">https://event-flow.co.uk</div></div>
+      <div class="top-cell top-action" id="topLastBox" role="button" tabindex="0" title="Open Audit Runs"><div class="top-label">Last run</div><div class="top-value" id="topLastRun">Never</div></div>
+      <div class="top-cell top-action" id="topPresetBox" role="button" tabindex="0" title="Jump to Report Style"><div class="top-label">Preset</div><div class="top-value" id="topPreset">Full Professional⌄</div></div>
+      <div class="top-cell top-action" id="topVersionBox" role="button" tabindex="0" title="Open Settings"><div class="top-label">Version</div><div class="top-value version" id="topVersion">v3.2.23</div></div>
+      <div class="ready"><span class="dot" id="statusDot"></span><span id="status">Ready</span></div>
+      <div class="icon-btn" id="settingsTop">⚙</div><div class="icon-btn" id="minTop">−</div><div class="icon-btn" id="closeTop">×</div>
+    </header>
+
+    <div class="content">
+      <div class="workspace">
+        <div class="view active" id="view-dashboard">
+          <section class="panel">
+            <div class="panel-inner">
+              <div class="section-title">1. Target & Scope</div>
+              <div class="grid2">
+                <div class="field"><label>Target URL</label><input id="url" class="input" value="https://event-flow.co.uk"></div>
+                <div class="field"><label>Output folder</label><div class="browse-row"><input id="out" class="input" value="audit/eventflow-ultra"><button class="btn-small" id="choose">📂 Browse...</button></div></div>
+              </div>
+              <div class="grid2">
+                <div class="field"><label>Scope mode</label><div class="tabs three"><div class="tab active" data-scope="exact">Exact pages</div><div class="tab" data-scope="auto">Auto</div><div class="tab" data-scope="sitemap">Sitemap</div></div><div class="note" id="scopeHelp">Exact pages is the safest default. Choose Auto to discover public links, or Sitemap to pull links from sitemap files.</div></div>
+                <div class="inline3"><div class="field"><label>Max pages</label><input id="maxPages" class="input" type="number" value="200"></div><div class="field"><label>Crawl depth</label><input id="depth" class="input" type="number" value="3"></div><div class="field"><label>Respect robots.txt</label><select id="respectRobots" class="select"><option value="yes" selected>Yes</option><option value="no">No</option></select></div></div>
+              </div>
+              <div class="grid2">
+                <div class="field"><label id="pagesLabel">Pages to audit (one per line)</label><textarea id="pages" class="textarea" data-exact-default="https://event-flow.co.uk/&#10;https://event-flow.co.uk/services&#10;https://event-flow.co.uk/about&#10;https://event-flow.co.uk/contact" placeholder="Enter exact pages here, one per line."></textarea><div class="auto-discover-hidden-note" id="autoHiddenNote">Auto and Sitemap discovery start automatically when selected. Switching mode cancels the previous discovery result.</div><div class="note" id="pageCount">Discovery ready</div>
+                  <div class="discovery-actions">
+                    <button type="button" class="mini-btn" id="discoverBtn" style="display:none"><span class="btn-label">Discover Pages</span></button>
+                    <button type="button" class="mini-btn" id="selectDiscoveredBtn" style="display:none">Select all</button>
+                    <button type="button" class="mini-btn" id="clearDiscoveredBtn" style="display:none">Clear discovered</button>
+                    <div class="discovery-status" id="discoveryStatus" style="display:none">No pages discovered yet</div>
+                  </div>
+                  <div class="discovery-panel" id="discoveryPanel">
+                    <div class="discovery-head"><strong id="discoveryTitle">Discovery results</strong><span id="discoverySummary">No discovery run yet</span></div>
+                    <div class="discovery-list" id="discoveryList"></div>
+                  </div>
+                </div>
+                <div><div class="field"><label>Include paths (optional)</label><input id="includePaths" class="input" placeholder="e.g. /blog/, /services/"></div><div class="field"><label>Exclude paths (optional)</label><input id="excludePaths" class="input" placeholder="e.g. /admin/, /cart/, /login/"></div></div>
+              </div>
+            </div>
+          </section>
+
+          <div class="cards-row">
+            <section class="subpanel"><div class="section-title">2. Devices (Screenshots & Testing)</div><div class="device-grid">
+              <label class="check-row"><input class="check device-check" type="checkbox" value="desktop-wide" checked><span class="checkbox">✓</span><span class="device-icon"></span><div><div class="item-main">Desktop</div><div class="item-sub">1920x1080</div></div></label>
+              <label class="check-row"><input class="check device-check" type="checkbox" value="laptop" checked><span class="checkbox">✓</span><span class="device-icon"></span><div><div class="item-main">Laptop</div><div class="item-sub">1366x768</div></div></label>
+              <label class="check-row"><input class="check device-check" type="checkbox" value="ipad" checked><span class="checkbox">✓</span><span class="phone"></span><div><div class="item-main">Tablet</div><div class="item-sub">768x1024</div></div></label>
+              <label class="check-row"><input class="check device-check" type="checkbox" value="iphone-pro-max" checked><span class="checkbox">✓</span><span class="phone"></span><div><div class="item-main">Mobile Large</div><div class="item-sub">414x896</div></div></label>
+              <label class="check-row"><input class="check device-check" type="checkbox" value="iphone-se" checked><span class="checkbox">✓</span><span class="phone"></span><div><div class="item-main">Mobile Small</div><div class="item-sub">375x667</div></div></label>
+              <label class="check-row"><input id="customDevice" class="check" type="checkbox"><span class="checkbox">✓</span><span class="device-icon"></span><div><div class="item-main">Custom</div><div class="item-sub">Live custom size</div></div></label>
+            </div><div class="custom-row"><input id="customName" class="input" value="Custom"><input id="customWidth" class="input" type="number" value="1200"><input id="customHeight" class="input" type="number" value="800"></div></section>
+
+            <section class="subpanel" id="reportStylePanel"><div class="section-title">3. Report Style</div><div class="report-style-note">Controls report.html, PDF and Word. Alternate outputs remain available from Reports.</div>
+              <label class="radio-row"><input type="radio" name="reportStyle" value="full" checked><span class="radio"></span><div><div class="radio-title">Full Professional Report</div><div class="radio-sub">Best default: complete report, register and appendices</div></div></label>
+              <label class="radio-row"><input type="radio" name="reportStyle" value="executive"><span class="radio"></span><div><div class="radio-title">Executive Summary</div><div class="radio-sub">Client-friendly risk and action summary</div></div></label>
+              <label class="radio-row"><input type="radio" name="reportStyle" value="technical"><span class="radio"></span><div><div class="radio-title">Technical Report</div><div class="radio-sub">Evidence and implementation detail for developers</div></div></label>
+              <label class="radio-row"><input type="radio" name="reportStyle" value="quick"><span class="radio"></span><div><div class="radio-title">Basic / Quick Report</div><div class="radio-sub">Short snapshot, score and top priorities</div></div></label>
+            </section>
+
+            <section class="subpanel"><div class="section-title">4. Flagged Text (Optional)</div><div class="field"><label class="dim">Text to highlight and capture across the website</label><textarea id="flagText" class="textarea" style="height:75px" maxlength="500" placeholder="e.g. sale, offer, free delivery, limited time"></textarea></div><div class="small-muted" style="display:flex;justify-content:space-between"><span>Separate multiple phrases with commas</span><span id="flagCount">0 / 500</span></div></section>
+          </div>
+
+          <section class="panel" style="margin-top:8px"><div class="panel-inner" style="padding-bottom:4px"><div class="section-title">5. Audit Modules</div></div><div class="modules"><div class="module-grid">
+            <label class="module"><input class="check module-check" type="checkbox" value="visual" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#61d881">👁</span><div><div class="module-title">Visual / Responsive UX</div><div class="module-sub">Screenshots, layout, mobile UX, overlays, menus</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="functionality" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#f2a93b">🔧</span><div><div class="module-title">Functionality</div><div class="module-sub">Broken links, errors, forms, buttons, interactions</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="seo" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#61d881">⌕</span><div><div class="module-title">SEO</div><div class="module-sub">Meta tags, headings, sitemap, robots, structured data</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="accessibility" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#b6df5b">●</span><div><div class="module-title">Accessibility</div><div class="module-sub">Axe, contrast, labels, keyboard basics</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="performance" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#ff8a20">⌁</span><div><div class="module-title">Performance</div><div class="module-sub">Web Vitals-style metrics, resources, DOM</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="security" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#a8de4d">🛡</span><div><div class="module-title">Safe Passive Security</div><div class="module-sub">Headers, CSP, SRI, cookies, exposed paths</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="privacy" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#f4c04f">🔒</span><div><div class="module-title">Privacy</div><div class="module-sub">Cookies, policies, tracking, GDPR signals</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="content" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#f2a93b">🛡</span><div><div class="module-title">Content / Trust</div><div class="module-sub">Placeholder text, trust signals, policies</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="technical" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#9be897">&lt;/&gt;</span><div><div class="module-title">Technical Quality</div><div class="module-sub">Console errors, viewport, duplicate scripts</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="auth" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#7db7ff">🔐</span><div><div class="module-title">Auth Gate Awareness</div><div class="module-sub">Login forms, restricted areas, session warnings</div></div></label>
+            <label class="module"><input class="check module-check" type="checkbox" value="forms" checked><span class="checkbox">✓</span><span class="module-icon" style="color:#64d8ff">▦</span><div><div class="module-title">Forms / Flow Dry Run</div><div class="module-sub">Safe non-submit checks for forms and validation</div></div></label>
+          </div></div></section>
+
+          <section class="panel"><div class="panel-inner"><div class="section-title">6. Capture Options</div><div class="capture-grid">
+            <label class="check-row"><input id="acceptCookies" class="check" type="checkbox" checked><span class="checkbox">✓</span><div><div class="item-main">Accept cookie banners</div><div class="item-sub">When permission granted</div></div></label>
+            <label class="check-row"><input id="hideOverlays" class="check" type="checkbox" checked><span class="checkbox">✓</span><div><div class="item-main">Hide sticky overlays</div><div class="item-sub">For cleaner screenshots</div></div></label>
+            <label class="check-row"><input id="menu" class="check" type="checkbox" checked><span class="checkbox">✓</span><div><div class="item-main">Capture mobile menu</div><div class="item-sub">Open & capture menu</div></div></label>
+            <label class="check-row"><input id="interactions" class="check" type="checkbox" checked><span class="checkbox">✓</span><div><div class="item-main">Capture interaction states</div><div class="item-sub">Hover, focus, expanded etc.</div></div></label>
+            <div class="wait-input"><span class="item-main">Wait time (sec)</span><input id="waitMs" class="num-input" type="number" value="2" min="0" max="20"></div>
+          </div></div></section>
+
+          <section class="panel"><div class="panel-inner permissions">
+            <label class="permission-text"><input id="permission" class="check" type="checkbox" checked><span class="checkbox">✓</span><div><div class="item-main">I own this website or have permission to audit it.</div><div class="item-sub" style="font-size:13px;margin-top:8px">Audits are safe, passive and non-intrusive.</div></div></label>
+            <button class="primary" id="run">▶ &nbsp; Run Ultra Audit</button><button class="stop" id="stop">■ &nbsp; Stop</button>
+          </div></section>
+        </div>
+
+        <div class="view" id="view-runs"><section class="panel placeholder"><h2>Audit Runs</h2><p>Past audits are stored locally on this machine. New runs show the selected report type; older legacy runs may show as unknown.</p><div id="runsList" class="list"></div></section></div>
+        <div class="view" id="view-projects"><section class="panel placeholder"><h2>Projects</h2><p>Save the current target, output and scope as a reusable project.</p><button class="mini-btn" id="saveProject">Save current as project</button><div id="projectsList" class="list"></div></section></div>
+        <div class="view" id="view-reports"><section class="panel placeholder"><h2>Reports</h2><p>Reports from completed audits are listed below.</p><div id="reportsList" class="list"></div></section></div>
+        <div class="view" id="view-templates"><section class="panel placeholder"><h2>Templates</h2><p>Save the current modules, devices and capture options as a reusable template.</p><button class="mini-btn" id="saveTemplate">Save current as template</button><div id="templatesList" class="list"></div></section></div>
+        <div class="view" id="view-settings"><section class="panel placeholder"><h2>Settings</h2><div class="placeholder-grid"><div class="placeholder-card"><b>Version</b><p id="settingsVersion">v3.2.23</p></div><div class="placeholder-card"><b>Update behaviour</b><p>Installers use the same app ID, so newer installers update/replace older installed versions.</p></div><div class="placeholder-card"><b>Security scope</b><p>Passive and non-intrusive checks only.</p></div></div><div style="margin-top:16px"><label>Default output root folder</label><div class="browse-row"><input id="defaultOutputRoot" class="input" placeholder="Leave blank to use Documents\SiteShot Audits"><button class="btn-small" id="saveSettings">Save</button></div><p class="dim">This is used when the Dashboard output folder is relative, for example audit/eventflow-ultra.</p></div></section></div>
+      </div>
+
+      <aside class="rightcol">
+        <section class="logbox"><div class="log-head"><span>Live Audit Log</span><span style="display:flex;align-items:center;gap:8px"><button class="log-expand" id="expandLog">Expand</button><span class="log-status"><span class="dot"></span><span id="logState">Ready</span></span></span></div><pre id="log">Ready.</pre><div class="progress"><div class="p-row"><span>Overall Progress</span><span id="progressText">0%</span></div><div class="bar"><div class="bar-fill" id="barFill"></div></div><div class="p-row" style="margin-top:14px"><span>Current Page</span><span id="currentPage">-</span></div><div id="currentUrl" style="color:#49a2ff;font-size:13px">No audit running</div><div class="divider"></div><div class="p-row"><span>Elapsed Time</span><span id="elapsed">00:00:00</span></div><div class="p-row"><span>Estimated Remaining</span><span id="remaining">-</span></div></div></section>
+        <section class="logbox"><div class="report-buttons"><div class="report-title">Reports <span class="dim" id="reportHint">(available after completion)</span></div><div class="report-btn" id="openReport">▤ Selected Report</div><div class="report-btn" id="openQuick">▤ Quick Report</div><div class="report-btn" id="openFull">▤ Full Report</div><div class="report-btn" id="openClient">▤ Client Report</div><div class="report-btn" id="openExec">▤ Executive Summary</div><div class="report-btn" id="openTech">▦ Technical Report</div><div class="report-btn" id="openRoadmap">☷ Fix Roadmap</div><div class="report-btn" id="openGallery">▧ Screenshot Gallery</div><div class="report-btn" id="openPdf">▤ PDF Report</div><div class="report-btn" id="openDocx">▤ Word Report</div><div class="report-btn" id="openIssues">▤ Issues CSV</div><div class="report-btn" id="openTickets">▤ Developer Tickets</div><div class="report-btn" id="exportZip">⇩ Export ZIP</div><div class="report-btn" id="openFolder">▰ Open Output Folder</div></div></section>
+        <section class="tip"><div class="bulb">💡</div><div><b>Tip:</b> Use Projects and Templates to avoid re-setting the same audits.</div></section>
+      </aside>
+    </div>
+  </main>
+</div>
+
+
+<div class="log-modal" id="logModal">
+  <div class="log-modal-card">
+    <div class="log-modal-head">
+      <h2>Live Audit Log</h2>
+      <div>
+        <button class="log-modal-close" id="copyLog">Copy log</button>
+        <button class="log-modal-close" id="closeLog">Close</button>
+      </div>
+    </div>
+    <pre id="logModalText">Ready.</pre>
+  </div>
+</div>
+
+
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-card">
+    <h2 id="confirmTitle">Confirm delete</h2>
+    <p id="confirmText">Are you sure?</p>
+    <label class="check-row" style="margin-top:14px">
+      <input id="confirmDeleteFiles" class="check" type="checkbox">
+      <span class="checkbox">✓</span>
+      <div>
+        <div class="item-main">Also delete the report files from disk</div>
+        <div class="item-sub">Leave unticked to remove from the app list only.</div>
+      </div>
+    </label>
+    <div class="confirm-actions">
+      <button class="secondary-btn" id="confirmCancel">Cancel</button>
+      <button class="danger-btn" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let last = null, store = null, scopeMode = 'exact', running = false, startTime = null, timer = null, lastProgress = 0;
+let discoveryRunId = 0;
+
+function normalisePages(raw){return raw.split(/[\n,]+/).map(x=>x.trim()).filter(Boolean).join(',')}
+function countPages(){
+  const n=normalisePages($('pages').value).split(',').filter(Boolean).length;
+  if(scopeMode!=='exact' && n===0){
+    $('pageCount').textContent='Discovery ready';
+  }else{
+    $('pageCount').textContent=`${n} page${n===1?'':'s'}`;
+  }
+  updateRunButton();
+}
+function selectedReportStyle(){return document.querySelector('input[name="reportStyle"]:checked')?.value||'full'}
+
+
+function iconSvg(name){
+  const icons={
+    spinner:'<svg class="btn-spin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    check:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 17 19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+  return icons[name]||'';
+}
+function setDiscoveryButtonState(state){
+  const btn=$('discoverBtn'); if(!btn)return;
+  const label=btn.querySelector('.btn-label')||btn;
+  if(state==='loading'){
+    btn.disabled=true;
+    btn.dataset.busy='1';
+    label.innerHTML=`${iconSvg('spinner')}<span>Discovering...</span>`;
+  }
+  else if(state==='done'){
+    btn.disabled=false;
+    btn.dataset.busy='0';
+    label.innerHTML=`${iconSvg('check')}<span>Discover again</span>`;
+  }
+  else{
+    btn.disabled=false;
+    btn.dataset.busy='0';
+    label.innerHTML='Discover Pages';
+  }
+}
+function setDiscoveryStatus(text, kind=''){
+  const el=$('discoveryStatus'); if(!el)return;
+  el.style.display='inline-flex';
+  el.textContent=text;
+  el.className=`discovery-status ${kind}`.trim();
+}
+
+function reportStyleLabel(style){
+  const labels={full:'Full Professional Report',executive:'Executive Summary',technical:'Technical Report',quick:'Basic / Quick Report',client:'Client Report'};
+  const key=String(style||'').toLowerCase();
+  return labels[key]||'Legacy run - report type unknown';
+}
+
+
+function getChecked(selector){
+  return [...document.querySelectorAll(`${selector}:checked`)].map(input=>input.value).filter(Boolean);
+}
+
+function updateRunButton(){const ok=$('permission').checked&&Boolean(getDevices())&&getChecked('.module-check').length&&!running;$('run').disabled=!ok}
+function setProgress(p){lastProgress=Math.max(0,Math.min(100,p));$('progressText').textContent=`${Math.round(lastProgress)}%`;$('barFill').style.width=`${lastProgress}%`}
+function formatTime(s){return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+function startTimer(){startTime=Date.now();clearInterval(timer);timer=setInterval(()=>$('elapsed').textContent=formatTime(Math.floor((Date.now()-startTime)/1000)),1000)}
+function stopTimer(){clearInterval(timer);timer=null}
+function appendLog(text){const log=$('log');if(log.textContent==='Ready.')log.textContent='';log.textContent+=text;log.scrollTop=log.scrollHeight;if(/Done\./i.test(text))setProgress(100);else if(running&&lastProgress<92)setProgress(lastProgress+2)}
+function showUiMessage(message){appendLog(`\n${message}\n`)}
+
+function safeBind(id, handler){
+  const el=$(id);
+  if(!el)return false;
+  el.onclick=null;
+  el.addEventListener('click', async event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    try{ await handler(event); }
+    catch(error){ showUiMessage(`${id} failed: ${error?.message||error}`); }
+  });
+  return true;
+}
+
+function bindEnterSpace(id, handler){
+  const el=$(id);
+  if(!el)return;
+  el.addEventListener('keydown',event=>{
+    if(event.key==='Enter'||event.key===' '){
+      event.preventDefault();
+      handler(event);
+    }
+  });
+}
+function scrollToElement(id){
+  const el=$(id);
+  if(el){
+    switchView('dashboard');
+    setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'center'}),30);
+  }
+}
+
+function setStatus(mode,text){
+  const topText=$('status')||$('statusText');
+  const topDot=$('statusDot');
+  const logText=$('logState')||$('logStatus');
+  const logDot=document.querySelector('.log-status .dot')||$('logDot');
+  if(topText)topText.textContent=text;
+  if(logText)logText.textContent=text;
+  if(topDot)topDot.className=`dot ${mode||''}`.trim();
+  if(logDot)logDot.className=`dot ${mode||''}`.trim();
+}
+function latestReportPath(kind){
+  if(!last)return '';
+  const map={
+    report:'report',
+    quick:'quick',
+    full:'full',
+    client:'client',
+    executive:'executive',
+    tech:'technical',
+    roadmap:'roadmap',
+    gallery:'gallery',
+    pdf:'pdf',
+    docx:'docx',
+    issues:'issuesCsv',
+    tickets:'tickets',
+    folder:'outDir'
+  };
+  return last[map[kind]]||'';
+}
+async function openLatestReport(kind,isFolder=false){
+  const target=latestReportPath(kind);
+  if(!target){
+    showUiMessage('No completed audit is available for that output yet. Run an audit first or open it from the Reports page.');
+    return;
+  }
+  const res=isFolder?await window.siteshot.openPath(target):await window.siteshot.openExternalFile(target);
+  if(res?.message)showUiMessage(res.message);
+  if(!res?.ok&&!res?.message)showUiMessage('Could not open the requested output.');
+}
+async function exportLatestZip(){
+  if(!last?.outDir){
+    showUiMessage('No completed audit folder is available yet. Run an audit first.');
+    return;
+  }
+  const res=await window.siteshot.exportOutputZip(last.outDir);
+  if(res.ok)showUiMessage(`ZIP exported: ${res.path}`);
+  else showUiMessage(res.message||'Export ZIP failed.');
+}
+function openExpandedLog(){
+  $('logModalText').textContent=$('log').textContent||'Ready.';
+  $('logModal').classList.add('open');
+}
+function closeExpandedLog(){
+  $('logModal').classList.remove('open');
+}
+async function copyExpandedLog(){
+  const text=$('logModalText').textContent||$('log').textContent||'';
+  try{
+    if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(text);
+      showUiMessage('Log copied to clipboard.');
+      return;
+    }
+  }catch{}
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.position='fixed';
+    ta.style.left='-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    showUiMessage(ok?'Log copied to clipboard.':'Copy was blocked. Select the expanded log text and copy it manually.');
+  }catch{
+    showUiMessage('Copy was blocked. Select the expanded log text and copy it manually.');
+  }
+}
+function toggleSidebar(){
+  document.body.classList.toggle('sidebar-collapsed');
+  try{localStorage.setItem('siteshot.sidebarCollapsed',document.body.classList.contains('sidebar-collapsed')?'1':'0')}catch{}
+}
+function restoreSidebarState(){
+  try{if(localStorage.getItem('siteshot.sidebarCollapsed')==='1')document.body.classList.add('sidebar-collapsed')}catch{}
+}
+async function openHelpDocs(){
+  if(window.siteshot.openHelpDocs){
+    const res=await window.siteshot.openHelpDocs();
+    if(res?.ok)showUiMessage(`Opened help documentation: ${res.path}`);
+    else showUiMessage(res?.message||'Could not open help documentation.');
+  }else{
+    showUiMessage('Guides are included in README FIRST - WINDOWS.txt and README.md in the app folder.');
+  }
+}
+
+function updateReportButtonState(){
+  const ready=Boolean(last?.outDir);
+  document.querySelectorAll('.report-btn').forEach(btn=>{
+    btn.classList.toggle('enabled',ready);
+    btn.classList.toggle('disabled-note',!ready);
+    btn.title=ready?'Open the latest completed audit output':'Run an audit first, or open a saved report from the Reports page';
+    btn.setAttribute('aria-disabled',ready?'false':'true');
+  });
+}
+
+function helpCardKeydown(event){
+  if(event.key==='Enter'||event.key===' '){
+    event.preventDefault();
+    openHelpDocs();
+  }
+}
+function wireCoreButtons(){
+  restoreSidebarState();
+
+  safeBind('minTop',()=>window.siteshot.windowAction('minimize'));
+  safeBind('closeTop',()=>window.siteshot.windowAction('close'));
+  safeBind('settingsTop',()=>{switchView('settings');showUiMessage('Settings opened.');});
+  safeBind('topWorkspace',()=>{switchView('projects');showUiMessage('Projects opened.');});
+  safeBind('topTargetBox',()=>{switchView('dashboard');$('url').focus();$('url').select();showUiMessage('Target URL focused.');});
+  safeBind('topLastBox',()=>{switchView('runs');showUiMessage((store?.runs||[]).length?'Audit Runs opened.':'No audit runs yet. Run an audit first, then this will show the latest run.');});
+  safeBind('sideLastRunCard',()=>{switchView('runs');showUiMessage((store?.runs||[]).length?'Audit Runs opened.':'No audit runs yet. Run an audit first, then this will show the latest run.');});
+  safeBind('topPresetBox',()=>{scrollToElement('reportStylePanel');const first=document.querySelector('input[name="reportStyle"]');if(first)first.focus();showUiMessage('Report style options highlighted.');});
+  safeBind('topVersionBox',()=>{switchView('settings');showUiMessage('Settings opened.');});
+  safeBind('sidebarToggle',toggleSidebar);
+  safeBind('helpCard',openHelpDocs);$('helpCard')?.addEventListener('keydown',helpCardKeydown);
+
+  safeBind('expandLog',openExpandedLog);
+  safeBind('closeLog',closeExpandedLog);
+  safeBind('copyLog',copyExpandedLog);
+  $('logModal')?.addEventListener('click',event=>{if(event.target===$('logModal'))closeExpandedLog()});
+  ['sidebarToggle','topWorkspace','topTargetBox','topLastBox','sideLastRunCard','topPresetBox','topVersionBox','helpCard'].forEach(id=>bindEnterSpace(id,()=>$(id)?.click()));
+
+  safeBind('openReport',()=>openLatestReport('report'));
+  safeBind('openQuick',()=>openLatestReport('quick'));
+  safeBind('openFull',()=>openLatestReport('full'));
+  safeBind('openClient',()=>openLatestReport('client'));
+  safeBind('openExec',()=>openLatestReport('executive'));
+  safeBind('openTech',()=>openLatestReport('tech'));
+  safeBind('openRoadmap',()=>openLatestReport('roadmap'));
+  safeBind('openGallery',()=>openLatestReport('gallery'));
+  safeBind('openPdf',()=>openLatestReport('pdf'));
+  safeBind('openDocx',()=>openLatestReport('docx'));
+  safeBind('openIssues',()=>openLatestReport('issues'));
+  safeBind('openTickets',()=>openLatestReport('tickets'));
+  safeBind('openFolder',()=>openLatestReport('folder',true));
+  safeBind('exportZip',exportLatestZip);
+
+  document.querySelectorAll('.report-btn').forEach(btn=>btn.classList.add('force-clickable'));updateReportButtonState();
+}
+// END wireCoreButtons
+
+function switchView(view){
+  const item=document.querySelector(`.nav-item[data-view="${view}"]`);
+  if(!item)return;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  item.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $('view-'+view)?.classList.add('active');
+}
+
+function setScopeTabBusy(mode,busy){
+  document.querySelectorAll('.tab').forEach(tab=>{
+    const isTarget=tab.dataset.scope===mode;
+    tab.classList.toggle('scope-loading',Boolean(busy&&isTarget));
+    tab.setAttribute('aria-busy',Boolean(busy&&isTarget)?'true':'false');
+  });
+}
+
+function clearScopeTabBusy(){
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.classList.remove('scope-loading');
+    tab.setAttribute('aria-busy','false');
+  });
+}
+
+function startDiscoveryForScope(){
+  if(scopeMode==='auto'||scopeMode==='sitemap'){
+    const url=$('url').value.trim();
+    if(!/^https?:\/\//i.test(url)){
+      clearScopeTabBusy();
+      setDiscoveryStatus('Enter a valid Target URL first','error');
+      showUiMessage('Enter a valid Target URL before starting discovery.');
+      return;
+    }
+    setScopeTabBusy(scopeMode,true);
+    $('discoveryPanel').classList.add('open');
+    $('discoveryTitle').textContent=scopeMode==='auto'?'Auto discovery':'Sitemap discovery';
+    $('discoverySummary').textContent='Starting…';
+    $('discoveryList').innerHTML=discoveryWorkingRow(scopeMode==='auto'?'Preparing Auto discovery…':'Preparing Sitemap discovery…','starting');
+    setDiscoveryStatus(scopeMode==='auto'?'Auto discovery starting…':'Sitemap discovery starting…','');
+    showUiMessage(scopeMode==='auto'?'Auto discovery started.':'Sitemap discovery started.');
+    setTimeout(()=>runDiscoveryFromButton(scopeMode),80);
+  }
+}
+
+function switchScopeMode(nextMode){
+  if(!nextMode)return;
+  const resolved=nextMode==='crawl'?'auto':nextMode;
+  if(resolved===scopeMode){
+    if(resolved==='auto'||resolved==='sitemap')startDiscoveryForScope();
+    return;
+  }
+  discoveryRunId++;
+  const previousMode=scopeMode;
+  scopeMode=resolved;
+  const btn=$('discoverBtn');
+  if(btn)btn.dataset.busy='0';
+
+  clearScopeTabBusy();
+
+  if(scopeMode==='auto'||scopeMode==='sitemap'){
+    delete $('pages').dataset.userEditedAuto;
+    $('pages').value='';
+    $('pageCount').textContent='Discovery ready';
+  }
+
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.scope===scopeMode));
+
+  if(scopeMode==='exact'){
+    setDiscoveryButtonState('idle');
+    clearScopeTabBusy();
+    if($('discoveryStatus'))$('discoveryStatus').style.display='none';
+    if($('discoveryPanel'))$('discoveryPanel').classList.remove('open');
+    showUiMessage(`Switched from ${previousMode} to Exact pages. Previous discovery ignored.`);
+  }else{
+    showUiMessage(`Switched to ${scopeMode==='auto'?'Auto':'Sitemap'} discovery. Previous discovery ignored.`);
+  }
+
+  updateScopeModeUI();
+  startDiscoveryForScope();
+}
+
+function selectedDiscoveredPages(){return [...document.querySelectorAll('.discovered-check:checked')].map(ch=>ch.value)}
+function currentConfig(){
+  const discovered=selectedDiscoveredPages();
+  const typedPages=normalisePages($('pages').value);
+  // Exact pages always use the textarea. Discovery modes use reviewed checkboxes first,
+  // then fall back to the textarea if the user has pasted/edited a page list.
+  // Blank pages in Auto/Crawl/Sitemap means "discover during the audit".
+  const pages=(scopeMode==='exact')?typedPages:(discovered.length?discovered.join(','):typedPages);
+  return{url:$('url').value.trim(),out:$('out').value.trim(),devices:getDevices(),modules:getChecked('.module-check').join(','),pages,maxPages:Number($('maxPages').value||200),depth:Number($('depth').value||3),waitMs:Number($('waitMs').value||2)*1000,flagText:$('flagText').value.trim(),reportStyle:selectedReportStyle(),scopeMode,includePaths:$('includePaths').value.trim(),excludePaths:$('excludePaths').value.trim(),respectRobots:$('respectRobots').value==='yes',menu:$('menu').checked,interactions:$('interactions').checked,acceptCookies:$('acceptCookies').checked,hideOverlays:$('hideOverlays').checked}
+}
+function getDevices(){const devices=getChecked('.device-check');if($('customDevice').checked){const w=Number($('customWidth').value||0);const h=Number($('customHeight').value||0);if(w>=240&&h>=240)devices.push(`custom:${w}x${h}`)}return devices.join(',')}
+function applyConfig(cfg){
+  if(!cfg)return;
+  if(cfg.url)$('url').value=cfg.url;
+  if(cfg.out)$('out').value=cfg.out;
+  if(cfg.pages)$('pages').value=String(cfg.pages).replaceAll(',', '\n');
+  if(cfg.maxPages)$('maxPages').value=cfg.maxPages;
+  if(cfg.depth)$('depth').value=cfg.depth;
+  if(cfg.flagText!==undefined)$('flagText').value=cfg.flagText||'';
+  if(cfg.includePaths!==undefined)$('includePaths').value=cfg.includePaths||'';
+  if(cfg.excludePaths!==undefined)$('excludePaths').value=cfg.excludePaths||'';
+  if(cfg.respectRobots!==undefined)$('respectRobots').value=cfg.respectRobots?'yes':'no';
+  if(cfg.scopeMode){
+    const tab=document.querySelector(`.tab[data-scope="${cfg.scopeMode}"]`);
+    if(tab){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');scopeMode=cfg.scopeMode;}
+  }
+  if(cfg.reportStyle){
+    const r=document.querySelector(`input[name="reportStyle"][value="${cfg.reportStyle}"]`);
+    if(r)r.checked=true;
+  }
+  if(cfg.modules){
+    const selected=String(cfg.modules).split(',').filter(Boolean);
+    document.querySelectorAll('.module-check').forEach(ch=>ch.checked=selected.includes(ch.value));
+  }
+  if(cfg.devices){
+    const selected=String(cfg.devices).split(',').filter(Boolean);
+    document.querySelectorAll('.device-check').forEach(ch=>ch.checked=selected.includes(ch.value));
+    const custom=selected.find(x=>/^custom:\d+x\d+$/i.test(x));
+    if(custom){
+      const m=custom.match(/custom:(\d+)x(\d+)/i);
+      $('customDevice').checked=true;
+      $('customWidth').value=m[1];
+      $('customHeight').value=m[2];
+      $('customName').value=`Custom ${m[1]}x${m[2]}`;
+    } else {
+      $('customDevice').checked=false;
+    }
+  }
+  for(const [id,key] of [['acceptCookies','acceptCookies'],['hideOverlays','hideOverlays'],['menu','menu'],['interactions','interactions']]){
+    if(cfg[key]!==undefined && $(id))$(id).checked=Boolean(cfg[key]);
+  }
+  $('topTarget').textContent=$('url').value.trim()||'-';
+  countPages();
+  updateRunButton();
+  showUiMessage('Loaded saved configuration.');
+}
+function escapeText(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]))}
+function setPathData(button,path,isFolder=false){button.dataset.path=path||'';button.dataset.folder=isFolder?'1':'0';button.addEventListener('click',()=>openStored(button.dataset.path,button.dataset.folder==='1'))}
+function makeButton(text,path,isFolder=false,className='mini-btn'){const b=document.createElement('button');b.className=className;b.textContent=text;setPathData(b,path,isFolder);return b}
+function renderStore(s){
+  store=s||store||{runs:[],projects:[],templates:[],settings:{}};
+  const runs=store.runs||[];
+
+  const latestRun=[...runs].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0))[0];
+  const topLastBox=$('topLastBox');
+  if(topLastBox)topLastBox.classList.toggle('empty-state',!latestRun);
+  if($('sideLastRunCard'))$('sideLastRunCard').classList.toggle('empty-state',!latestRun);
+  if($('topLastRun'))$('topLastRun').textContent=latestRun?new Date(latestRun.createdAt).toLocaleString():'Never';
+  if($('lastRunSide'))$('lastRunSide').textContent=latestRun?new Date(latestRun.createdAt).toLocaleString():'Never';
+  if($('lastRunDetail'))$('lastRunDetail').textContent=latestRun?`${latestRun.reportStyleLabel||reportStyleLabel(latestRun.reportStyle)} · Score ${latestRun.score??'-'} · ${latestRun.issueCount??'-'} issues`:'No audits run yet';
+
+
+  const runsList=$('runsList');
+  runsList.innerHTML='';
+  if(!runs.length){runsList.innerHTML='<p>No audit runs yet.</p>'}else{
+    for(const r of runs){
+      const item=document.createElement('div');item.className='list-item';
+      item.innerHTML=`<h3>${escapeText(r.targetUrl||'Audit')}</h3><div class="meta-badges"><span class="meta-badge good">${escapeText(r.reportStyleLabel||reportStyleLabel(r.reportStyle))}</span><span class="meta-badge">Score ${escapeText(r.score??'-')}</span><span class="meta-badge">Issues ${escapeText(r.issueCount??'-')}</span></div><p>${escapeText(new Date(r.createdAt).toLocaleString())}</p>`;
+      item.appendChild(makeButton('Open report',r.report));
+      item.appendChild(makeButton('Open folder',r.outDir,true));
+      const del=document.createElement('button');del.className='danger-btn';del.textContent='Delete';del.addEventListener('click',()=>confirmDeleteRuns([r.id],`Delete audit run for ${r.targetUrl||'this website'}?`));item.appendChild(del);
+      runsList.appendChild(item);
+    }
+  }
+
+  const projectsList=$('projectsList');
+  projectsList.innerHTML='';
+  if(!(store.projects||[]).length){projectsList.innerHTML='<p>No projects saved yet.</p>'}else{
+    for(const p of store.projects||[]){
+      const item=document.createElement('div');item.className='list-item';
+      item.innerHTML=`<h3>${escapeText(p.name||p.url)}</h3><p>${escapeText(p.url||'')}</p>`;
+      const load=document.createElement('button');load.className='mini-btn';load.textContent='Load';load.addEventListener('click',()=>loadProject(p));item.appendChild(load);
+      const del=document.createElement('button');del.className='danger-btn';del.textContent='Delete';del.addEventListener('click',()=>deleteItem('projects',p.id));item.appendChild(del);
+      projectsList.appendChild(item);
+    }
+  }
+
+  const templatesList=$('templatesList');
+  templatesList.innerHTML='';
+  if(!(store.templates||[]).length){templatesList.innerHTML='<p>No templates saved yet.</p>'}else{
+    for(const t of store.templates||[]){
+      const item=document.createElement('div');item.className='list-item';
+      item.innerHTML=`<h3>${escapeText(t.name||'Template')}</h3><p>${escapeText(t.modules||'')}</p>`;
+      const apply=document.createElement('button');apply.className='mini-btn';apply.textContent='Apply';apply.addEventListener('click',()=>applyConfig(t.config));item.appendChild(apply);
+      const del=document.createElement('button');del.className='danger-btn';del.textContent='Delete';del.addEventListener('click',()=>deleteItem('templates',t.id));item.appendChild(del);
+      templatesList.appendChild(item);
+    }
+  }
+
+  const reportsList=$('reportsList');
+  reportsList.innerHTML='';
+  if(!runs.length){reportsList.innerHTML='<p>No reports generated yet.</p>'}else{
+    const toolbar=document.createElement('div');toolbar.className='report-toolbar';
+    const selectAll=document.createElement('button');selectAll.className='mini-btn report-action-btn';selectAll.textContent='Select all';selectAll.addEventListener('click',()=>document.querySelectorAll('.report-select').forEach(ch=>ch.checked=true));toolbar.appendChild(selectAll);
+    const clear=document.createElement('button');clear.className='mini-btn report-action-btn';clear.textContent='Clear';clear.addEventListener('click',()=>document.querySelectorAll('.report-select').forEach(ch=>ch.checked=false));toolbar.appendChild(clear);
+    const bulk=document.createElement('button');bulk.className='danger-btn report-action-btn';bulk.textContent='Bulk delete selected';bulk.addEventListener('click',()=>{const ids=[...document.querySelectorAll('.report-select:checked')].map(ch=>ch.value);if(!ids.length)return showUiMessage('Select at least one report first.');confirmDeleteRuns(ids,`Delete ${ids.length} selected report record(s)?`)});toolbar.appendChild(bulk);
+    reportsList.appendChild(toolbar);
+
+    for(const r of runs){
+      const item=document.createElement('div');item.className='list-item';
+      const check=document.createElement('input');check.type='checkbox';check.className='report-select';check.value=r.id;check.style.marginRight='10px';
+      const title=document.createElement('h3');title.appendChild(check);title.appendChild(document.createTextNode(r.targetUrl||'Report'));
+      item.appendChild(title);
+      const p=document.createElement('p');p.textContent=`${new Date(r.createdAt).toLocaleString()}`;item.appendChild(p);const badges=document.createElement('div');badges.className='meta-badges';badges.innerHTML=`<span class="meta-badge good">${escapeText(r.reportStyleLabel||reportStyleLabel(r.reportStyle))}</span><span class="meta-badge">Score ${escapeText(r.score??'-')}</span><span class="meta-badge">Issues ${escapeText(r.issueCount??'-')}</span>`;item.appendChild(badges);
+      item.appendChild(makeButton('Selected HTML',r.report));
+      item.appendChild(makeButton('Quick',r.quick));
+      item.appendChild(makeButton('Full HTML',r.full));
+      item.appendChild(makeButton('Client HTML',r.client));
+      item.appendChild(makeButton('PDF',r.pdf));
+      item.appendChild(makeButton('Word',r.docx));
+      item.appendChild(makeButton('CSV',r.issuesCsv));
+      item.appendChild(makeButton('Folder',r.outDir,true));
+      const del=document.createElement('button');del.className='danger-btn';del.textContent='Delete';del.addEventListener('click',()=>confirmDeleteRuns([r.id],`Delete report record for ${r.targetUrl||'this website'}?`));item.appendChild(del);
+      reportsList.appendChild(item);
+    }
+  }
+
+  if(store.settings?.defaultOutputRoot)$('defaultOutputRoot').value=store.settings.defaultOutputRoot;
+}
+window.openStored=async(p,isFolder=false)=>{if(!p)return showUiMessage('No path available.');const res=isFolder?await window.siteshot.openPath(p):await window.siteshot.openExternalFile(p);if(res.message)showUiMessage(res.message);if(!res.ok)showUiMessage(res.message||'Could not open item.')}
+window.loadProject=p=>applyConfig(p.config||p)
+window.deleteItem=async(kind,id)=>{const res=await window.siteshot.deleteStoreItem(kind,id);if(res.ok)renderStore(res.store)}
+
+document.querySelectorAll('.nav-item').forEach(item=>item.addEventListener('click',()=>switchView(item.dataset.view)))
+document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>switchScopeMode(tab.dataset.scope)))
+document.querySelectorAll('input').forEach(input=>input.addEventListener('change',updateRunButton))
+$('pages').addEventListener('input',countPages);$('flagText').addEventListener('input',()=>$('flagCount').textContent=`${$('flagText').value.length} / 500`)
+$('url').addEventListener('input',()=>{$('topTarget').textContent=$('url').value.trim()||'-'})
+window.siteshot.getVersion().then(v=>{const label=`v${v}`;$('versionPill').textContent=label;$('topVersion').textContent=label;$('settingsVersion').textContent=label;$('versionText').textContent=`${label} Ultra`})
+window.siteshot.getStore().then(s=>{store=s;renderStore(s)})
+window.siteshot.onStoreUpdated(s=>{store=s;renderStore(s)})
+window.siteshot.onSwitchView(view=>switchView(view))
+window.siteshot.onLog(text=>appendLog(text))
+window.siteshot.onComplete(payload=>{last=payload;running=false;stopTimer();setProgress(payload.code===0?100:lastProgress);setStatus(payload.code===0?'':'error',payload.code===0?'Ready':'Finished');$('stop').classList.remove('enabled');$('topLastRun').textContent='Just now';$('lastRunSide').textContent='Just now';$('lastRunDetail').textContent=payload.code===0?`${payload.summary?.selectedReportLabel||reportStyleLabel(payload.summary?.selectedReportStyle)} · Score ${payload.summary?.scores?.overall??'-'} · ${payload.summary?.issueCount??'-'} issues`:'Audit finished with errors';$('reportHint').textContent=payload.code===0?'(checked)':'(check output)';
+  if(payload.createdFallbacks&&payload.createdFallbacks.length){showUiMessage(`Recovered missing report files: ${payload.createdFallbacks.join(', ')}`);}updateReportButtonState();updateRunButton()})
+
+$('choose').onclick=async()=>{const folder=await window.siteshot.chooseFolder();if(folder)$('out').value=folder}
+$('saveProject').onclick=async()=>{const cfg=currentConfig();const name=prompt('Project name', cfg.url.replace(/^https?:\/\//,''));if(!name)return;const res=await window.siteshot.saveProject({name,url:cfg.url,out:cfg.out,config:cfg});if(res.ok){renderStore(res.store);updateReportButtonState();showUiMessage('Project saved.')}}
+$('saveTemplate').onclick=async()=>{const cfg=currentConfig();const name=prompt('Template name','Full Professional');if(!name)return;const res=await window.siteshot.saveTemplate({name,modules:cfg.modules,devices:cfg.devices,config:cfg});if(res.ok){renderStore(res.store);updateReportButtonState();showUiMessage('Template saved.')}}
+$('saveSettings').onclick=async()=>{const res=await window.siteshot.saveSettings({defaultOutputRoot:$('defaultOutputRoot').value.trim()});if(res.ok){renderStore(res.store);updateReportButtonState();showUiMessage('Settings saved.')}}
+function validateBeforeRun(){const cfg=currentConfig();if(!/^https?:\/\//i.test(cfg.url))return'Enter a valid Target URL starting with http:// or https://.';if(!cfg.devices)return'Choose at least one device.';if($('customDevice').checked){const w=Number($('customWidth').value||0),h=Number($('customHeight').value||0);if(w<240||h<240)return'Custom viewport must be at least 240 x 240.';}if(!cfg.modules)return'Choose at least one audit module.';if(!$('permission').checked)return'Tick the permission checkbox before running an audit.';if(scopeMode==='exact'&&!cfg.pages)return'Exact pages mode needs at least one page URL.';return''}
+$('run').onclick=async()=>{const problem=validateBeforeRun();if(problem)return showUiMessage(problem);const data=currentConfig();$('log').textContent='';setStatus('running','Running');$('currentPage').textContent='-';$('currentUrl').textContent=data.url;$('remaining').textContent='Calculating...';last=null;updateReportButtonState();setProgress(5);running=true;startTimer();$('stop').classList.add('enabled');updateRunButton();$('topTarget').textContent=data.url;const result=await window.siteshot.runAudit(data);if(!result.ok){showUiMessage(result.message);running=false;stopTimer();setStatus('','Ready');$('stop').classList.remove('enabled');updateRunButton()}}
+$('stop').onclick=async()=>{if(!$('stop').classList.contains('enabled'))return;const result=await window.siteshot.stopAudit();showUiMessage(result.message);running=false;stopTimer();setStatus('','Ready');$('stop').classList.remove('enabled');updateRunButton()}
+
+function updateScopeModeUI(){
+  const isExact=scopeMode==='exact';
+  const isDiscovery=scopeMode==='auto'||scopeMode==='sitemap';
+  const pages=$('pages');
+  const discoverBtn=$('discoverBtn');
+  const selectBtn=$('selectDiscoveredBtn');
+  const clearBtn=$('clearDiscoveredBtn');
+  const label=$('pagesLabel');
+  const help=$('scopeHelp');
+  const status=$('discoveryStatus');
+  const panel=$('discoveryPanel');
+
+  document.body.classList.toggle('scope-auto-running',isDiscovery);
+
+  pages.readOnly=!isExact;
+  pages.classList.toggle('pages-disabled',!isExact);
+  pages.classList.toggle('auto-hidden',!isExact && !pages.value.trim());
+  if($('autoHiddenNote'))$('autoHiddenNote').classList.toggle('show',isDiscovery && !pages.value.trim());
+
+  if(discoverBtn)discoverBtn.style.display='none';
+  if(selectBtn)selectBtn.style.display='none';
+  if(clearBtn)clearBtn.style.display='none';
+
+  if(scopeMode==='exact'){
+    label.textContent='Exact pages to audit';
+    help.textContent='Default mode. Enter the exact pages you want to audit, one per line.';
+    if(!pages.value.trim() || pages.dataset.autoModeBlank==='1'){
+      pages.value=pages.dataset.exactDefault||'';
+      delete pages.dataset.autoModeBlank;
+    }
+    pages.readOnly=false;
+    pages.classList.remove('auto-hidden');
+    pages.placeholder='Enter one page URL per line.';
+    if(status){
+      status.textContent='Exact pages mode';
+      status.className='discovery-status';
+      status.style.display='none';
+    }
+    if(panel)panel.classList.remove('open');
+    if($('pageCount') && !pages.value.trim())$('pageCount').textContent='0 pages';
+  }else if(scopeMode==='auto'){
+    label.textContent='Auto discovered pages';
+    help.textContent='Auto starts immediately. It checks sitemap files, homepage navigation, common menu buttons, internal links and script/data link references, then fills this box.';
+    if(!pages.dataset.userEditedAuto){
+      pages.value='';
+      pages.dataset.autoModeBlank='1';
+    }
+    pages.placeholder='Auto discovery will populate this list.';
+    if(status)status.style.display='inline-flex';
+    setDiscoveryStatus('Auto discovery starting…','');
+  }else if(scopeMode==='sitemap'){
+    label.textContent='Sitemap pages';
+    help.textContent='Sitemap starts immediately. It reads sitemap.xml, sitemap indexes and robots.txt sitemap references, then fills this box.';
+    if(!pages.dataset.userEditedAuto){
+      pages.value='';
+      pages.dataset.autoModeBlank='1';
+    }
+    pages.placeholder='Sitemap discovery will populate this list.';
+    if(status)status.style.display='inline-flex';
+    setDiscoveryStatus('Sitemap discovery starting…','');
+  }
+  countPages();
+}
+
+function discoveryWorkingRow(text='Discovery running…', meta='working'){
+  return `<div class="discovery-row discovery-working"><span class="discovery-spinner"></span><div class="discovery-url">${escapeText(text)}</div><div class="discovery-badge wait">${escapeText(meta)}</div></div>`;
+}
+function discoveryErrorRow(text='Discovery failed.', meta='failed'){
+  return `<div class="discovery-row discovery-error"><span class="discovery-x">×</span><div class="discovery-url">${escapeText(text)}<span class="muted">Try reducing Max pages/depth, or run the audit directly using Auto Discover.</span></div><div class="discovery-badge bad">error</div><div class="discovery-meta">${escapeText(meta)}</div></div>`;
+}
+
+function discoveryLowYieldNotice(){
+  return `<div class="discovery-row discovery-fallback"><span>!</span><div class="discovery-url">Only one public page was discovered.<span class="muted">The site may be auth-gated, crawler-resistant or mostly app-driven. Try a normal public marketing website for a better discovery test.</span></div><div class="discovery-badge warn">limited</div><div class="discovery-meta">low yield</div></div>`;
+}
+
+function discoveryFallbackNotice(message){
+  return `<div class="discovery-row discovery-fallback"><span>!</span><div class="discovery-url">${escapeText(message)}<span class="muted">This site may be auth-gated, crawler-resistant or mostly app-driven. Starter routes are included so the audit can continue instead of stopping at one page.</span></div><div class="discovery-badge warn">fallback</div><div class="discovery-meta">safe list</div></div>`;
+}
+
+function renderDiscovery(result){
+  const panel=$('discoveryPanel'), list=$('discoveryList'), title=$('discoveryTitle'), summary=$('discoverySummary');
+  const included=result?.included||[];
+  const rejected=result?.rejected||[];
+  panel.classList.add('open');
+  list.innerHTML='';
+  title.textContent='Discovery results';
+  if(result?.fallback){list.insertAdjacentHTML('beforeend',discoveryFallbackNotice(result.message||'Discovery was limited.'))}else if(included.length===1){list.insertAdjacentHTML('beforeend',discoveryLowYieldNotice())}
+  summary.textContent=`${included.length} included · ${rejected.length} rejected · mode: ${result?.mode||scopeMode}`;
+
+  const pagesBox=$('pages');
+  if(pagesBox){
+    pagesBox.classList.remove('auto-hidden');
+    pagesBox.classList.remove('pages-disabled');
+    pagesBox.readOnly=false;
+    pagesBox.dataset.userEditedAuto='1';
+  }
+  if($('autoHiddenNote'))$('autoHiddenNote').classList.remove('show');
+  if($('pagesLabel'))$('pagesLabel').textContent='Discovered pages selected for audit';
+
+  for(const item of included){
+    const row=document.createElement('div');row.className='discovery-row';
+    const check=document.createElement('input');check.type='checkbox';check.className='report-select discovered-check';check.value=item.url;check.checked=true;
+    check.addEventListener('change',syncDiscoveredToTextarea);
+    row.appendChild(check);
+    const url=document.createElement('div');url.className='discovery-url';url.title=item.url;url.textContent=item.url;row.appendChild(url);
+    const status=document.createElement('div');status.className=`discovery-badge ${item.status==='fallback'?'warn':'good'}`;status.textContent=item.status||'OK';row.appendChild(status);
+    const source=document.createElement('div');source.className='discovery-meta';source.textContent=item.source||'-';row.appendChild(source);
+    list.appendChild(row);
+  }
+
+  for(const item of rejected.slice(0,60)){
+    const row=document.createElement('div');row.className='discovery-row rejected';
+    const x=document.createElement('span');x.textContent='×';x.style.color='#ffb3ae';row.appendChild(x);
+    const url=document.createElement('div');url.className='discovery-url';url.title=item.url||item.requestedUrl||'';url.textContent=item.url||item.requestedUrl||'-';row.appendChild(url);
+    const status=document.createElement('div');status.className='discovery-badge bad';status.textContent=item.status||'reject';row.appendChild(status);
+    const source=document.createElement('div');source.className='discovery-meta';source.title=item.reason||'';source.textContent=item.reason||item.source||'-';row.appendChild(source);
+    list.appendChild(row);
+  }
+
+  syncDiscoveredToTextarea();
+
+  if(included.length){
+    setDiscoveryButtonState('done');
+    setDiscoveryStatus(result?.fallback?`${included.length} starter page${included.length===1?'':'s'} returned`:`${included.length} page${included.length===1?'':'s'} discovered${rejected.length?` · ${rejected.length} rejected`:''}`,result?.fallback?'warn':'ok');
+    showUiMessage(result?.fallback?`${included.length} starter/public pages returned because discovery was limited.`:`${included.length} page${included.length===1?'':'s'} discovered and ready to audit.`);
+  }else{
+    setDiscoveryButtonState('idle');
+    setDiscoveryStatus(rejected.length?`No valid pages found · ${rejected.length} rejected`:'No pages found','warn');
+    showUiMessage('No valid pages were discovered. Check the target URL or try Crawl Website/Sitemap.');
+  }
+}
+function syncDiscoveredToTextarea(){
+  const selected=selectedDiscoveredPages();
+  if(scopeMode!=='exact'){
+    $('pages').value=selected.join('\n');
+    $('pages').dataset.userEditedAuto='1';
+    $('pageCount').textContent=`${selected.length} selected`;
+    setDiscoveryStatus(selected.length?`${selected.length} page${selected.length===1?'':'s'} selected`:'No pages selected',selected.length?'ok':'warn');
+    updateRunButton();
+  }
+}
+async function withTimeout(promise, ms, label){
+  let timeoutId;
+  const timeout=new Promise((_,reject)=>{
+    timeoutId=setTimeout(()=>reject(new Error(`${label||'Operation'} timed out after ${Math.round(ms/1000)} seconds.`)),ms);
+  });
+  try{
+    return await Promise.race([promise,timeout]);
+  }finally{
+    clearTimeout(timeoutId);
+  }
+}
+
+async function runDiscoveryFromButton(trigger='auto'){
+  const runId=++discoveryRunId;
+  const btn=$('discoverBtn');
+  if(btn?.dataset.busy==='1' && trigger==='button')return;
+  if(btn)btn.dataset.busy='1';
+
+  setDiscoveryButtonState('loading');
+  setDiscoveryStatus('Preparing discovery…','');
+  $('discoveryPanel').classList.add('open');
+  $('discoverySummary').textContent='Preparing…';
+  $('discoveryList').innerHTML=discoveryWorkingRow('Preparing page discovery…','starting');
+
+  let cfg;
+  try{
+    cfg=currentConfig();
+  }catch(err){
+    if(runId!==discoveryRunId){if(btn)btn.dataset.busy='0';appendLog('Ignored stale discovery error after scope changed.\n');return;}
+    if(btn)btn.dataset.busy='0';
+    clearScopeTabBusy();
+    setDiscoveryButtonState('idle');
+    setDiscoveryStatus('Discovery setup failed','error');
+    $('discoverySummary').textContent='Discovery setup failed';
+    $('discoveryList').innerHTML=discoveryErrorRow('Discovery could not start because the page settings could not be read.','setup');
+    showUiMessage(`Discovery setup failed: ${err?.message||err}`);
+    return;
+  }
+
+  if(!/^https?:\/\//i.test(cfg.url||'')){
+    if(btn)btn.dataset.busy='0';
+    clearScopeTabBusy();
+    setDiscoveryButtonState('idle');
+    setDiscoveryStatus('Enter a valid target URL first','error');
+    $('discoverySummary').textContent='Waiting for valid target URL';
+    showUiMessage('Enter a valid Target URL before discovery.');
+    return;
+  }
+
+  setDiscoveryButtonState('loading');
+  setDiscoveryStatus('Discovering pages…','');
+  $('discoverySummary').textContent='Discovering…';
+  $('discoveryList').innerHTML=discoveryWorkingRow('Checking sitemap, navigation and internal links. This can take a little while on larger sites.','working');
+
+  // Let the UI repaint so the user sees Discovering... before the Electron IPC work starts.
+  await new Promise(resolve=>setTimeout(resolve,80));
+
+  try{
+    if(!window.siteshot?.discoverPages){
+      throw new Error('Discovery bridge is not available in this app window.');
+    }
+    const payload=await withTimeout(window.siteshot.discoverPages(cfg),180000,'Page discovery');
+    if(runId!==discoveryRunId){if(btn)btn.dataset.busy='0';appendLog('Ignored stale discovery result after scope changed.\n');return;}
+    if(btn)btn.dataset.busy='0';
+    if(!payload?.ok){
+      clearScopeTabBusy();
+      setDiscoveryButtonState('idle');
+      setDiscoveryStatus(payload?.message||'Discovery failed','error');
+      $('discoverySummary').textContent='Discovery failed';
+      $('discoveryList').innerHTML=discoveryErrorRow('Discovery failed. Check the target URL or try another mode.','failed');
+      showUiMessage(payload?.message||'Discovery failed.');
+      return;
+    }
+    clearScopeTabBusy();
+    renderDiscovery(payload);
+  }catch(err){
+    if(runId!==discoveryRunId){if(btn)btn.dataset.busy='0';appendLog('Ignored stale discovery error after scope changed.\n');return;}
+    if(btn)btn.dataset.busy='0';
+    clearScopeTabBusy();
+    setDiscoveryButtonState('idle');
+    setDiscoveryStatus('Discovery failed','error');
+    $('discoverySummary').textContent='Discovery failed';
+    $('discoveryList').innerHTML=discoveryErrorRow('Discovery failed. Check the target URL or try another mode.','failed');
+    showUiMessage(`Discovery failed: ${err?.message||err}`);
+    appendLog(`Discovery failed: ${err?.message||err}
+`);
+  }
+}
+function finalUiSanityCheck(){
+  const expectedScopes=[...document.querySelectorAll('.tab')].map(tab=>tab.dataset.scope).join(',');
+  if(expectedScopes!=='exact,auto,sitemap'){
+    appendLog(`Unexpected scope tabs: ${expectedScopes}\n`);
+  }
+  if(scopeMode!=='exact'){
+    appendLog(`Unexpected default scope mode: ${scopeMode}\n`);
+  }
+  if(!$('pages') || !$('url') || !$('discoveryPanel')){
+    appendLog('Target & Scope controls missing after startup.\n');
+  }
+}
+
+function validateCriticalUi(){
+  const required=['discoverBtn','selectDiscoveredBtn','clearDiscoveredBtn','url','pages','permission','run','stop','sidebarToggle','openReport','exportZip'];
+  const missing=required.filter(id=>!$(id));
+  if(missing.length){
+    appendLog(`Critical UI controls missing: ${missing.join(', ')}\n`);
+  }
+  return missing.length===0;
+}
+
+function wireDiscoveryButtons(){
+  const btn=$('discoverBtn');
+  if(!btn)return;
+  btn.onclick=null;
+  if(btn.dataset.discoveryWired==='1')return;
+  btn.dataset.discoveryWired='1';
+  btn.addEventListener('click',event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    runDiscoveryFromButton();
+  });
+}
+
+
+$('selectDiscoveredBtn').onclick=()=>{
+  const checks=[...document.querySelectorAll('.discovered-check')];
+  if(!checks.length){
+    setDiscoveryStatus('Nothing to select yet','warn');
+    showUiMessage('Discover pages first.');
+    return;
+  }
+  checks.forEach(ch=>ch.checked=true);
+  syncDiscoveredToTextarea();
+  setDiscoveryStatus(`${checks.length} page${checks.length===1?'':'s'} selected`,'ok');
+};
+
+$('clearDiscoveredBtn').onclick=()=>{
+  const checks=[...document.querySelectorAll('.discovered-check')];
+  if(!checks.length){
+    setDiscoveryStatus('Nothing to clear yet','warn');
+    showUiMessage('There are no discovered pages to clear yet.');
+    return;
+  }
+  checks.forEach(ch=>ch.checked=false);
+  $('pages').value='';
+  $('pages').dataset.userEditedAuto='1';
+  $('pageCount').textContent='0 selected';
+  setDiscoveryStatus('All discovered pages cleared','warn');
+  showUiMessage('Discovered page selection cleared.');
+};
+
+let pendingDeleteRunIds=[];
+function confirmDeleteRuns(ids,message){
+  pendingDeleteRunIds=ids;
+  $('confirmTitle').textContent=ids.length>1?'Confirm bulk delete':'Confirm delete';
+  $('confirmText').textContent=message;
+  $('confirmDeleteFiles').checked=false;
+  $('confirmModal').classList.add('open');
+}
+$('confirmCancel').onclick=()=>{$('confirmModal').classList.remove('open');pendingDeleteRunIds=[]};
+$('confirmModal').addEventListener('click',e=>{if(e.target===$('confirmModal')){$('confirmModal').classList.remove('open');pendingDeleteRunIds=[]}});
+$('confirmOk').onclick=async()=>{
+  const ids=[...pendingDeleteRunIds];
+  const deleteFiles=$('confirmDeleteFiles').checked;
+  if(!ids.length){$('confirmModal').classList.remove('open');return}
+  const res=ids.length===1
+    ? await window.siteshot.deleteRun(ids[0],deleteFiles)
+    : await window.siteshot.bulkDeleteRuns(ids,deleteFiles);
+  if(res.ok){
+    renderStore(res.store);updateReportButtonState();
+    showUiMessage(ids.length===1?'Report record deleted.':`${ids.length} report record(s) deleted.`);
+  }else{
+    showUiMessage(res.message||'Delete failed.');
+  }
+  $('confirmModal').classList.remove('open');
+  pendingDeleteRunIds=[];
+};
+
+
+function updateTopPresetLabel(){
+  const style=selectedReportStyle();
+  $('topPreset').textContent=reportStyleLabel(style).replace(' Report','')+'⌄';
+}
+document.querySelectorAll('input[name="reportStyle"]').forEach(r=>r.addEventListener('change',updateTopPresetLabel));
+
+finalUiSanityCheck();validateCriticalUi();wireCoreButtons();wireDiscoveryButtons();updateReportButtonState();updateTopPresetLabel();updateScopeModeUI();countPages();updateRunButton();setDiscoveryStatus('No pages discovered yet','muted')
+</script>
+</body>
+</html>

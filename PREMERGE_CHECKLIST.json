@@ -1,0 +1,23 @@
+{
+  "version": "3.2.23",
+  "auto_sitemap_tabs": {
+    "click_listener_global": true,
+    "discovery_functions_outside_switchView": true,
+    "animated_busy_tab_state": true,
+    "auto_sitemap_auto_start": true,
+    "spinner_clears_before_render": true
+  },
+  "last_run": {
+    "topbar_actionable": true,
+    "sidebar_actionable": true,
+    "uses_newest_createdAt_run": true,
+    "empty_state_feedback": true
+  },
+  "quality_gates": {
+    "node_check_all_passed": true,
+    "preflight_passed": true,
+    "inline_script_check_passed": true,
+    "no_duplicate_ids": true,
+    "visible_version_updated": true
+  }
+}
