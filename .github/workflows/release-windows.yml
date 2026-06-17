@@ -52,7 +52,7 @@ jobs:
           if (-not (Test-Path $zipPath)) { throw "Release zip was not created" }
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag_name }}
           name: SiteShot Auditor Studio Ultra ${{ github.event.inputs.tag_name }}
