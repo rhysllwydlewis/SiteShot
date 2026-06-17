@@ -66,11 +66,11 @@ GITHUB BUILD NOTES
 The repository includes GitHub Actions for:
 
 - CI checks on push and pull request.
-- Manual Windows EXE/artifact builds.
+- Manual Windows installer/artifact builds.
 - Manual release packaging.
 - Manual EventFlow audit runs.
 
-Before publishing a release, run the Windows build workflow and confirm install.exe opens correctly on Windows, installs the app, creates shortcuts, and launches SiteShot Auditor Studio.
+Before publishing a release, run the Windows installer workflow and confirm install.exe opens correctly on Windows, installs the app, creates shortcuts, and launches SiteShot Auditor Studio.
 
 SAFE SECURITY SCOPE
 
