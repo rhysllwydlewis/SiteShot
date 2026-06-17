@@ -60,6 +60,7 @@ const requiredFiles = [
   'docs/ROADMAP.md',
   'docs/SAFETY.md',
   'docs/TROUBLESHOOTING.md',
+  '.gitignore',
   '.github/dependabot.yml',
   '.github/pull_request_template.md',
   '.github/ISSUE_TEMPLATE/bug_report.md',
@@ -75,7 +76,9 @@ const requiredFiles = [
   'scripts/installer-smoke-check.mjs',
   'scripts/preflight-check.mjs',
   'BUILD WINDOWS INSTALLER.bat',
-  'src/lib/playwright-runtime.mjs'
+  'BUILD WINDOWS EXE.bat',
+  'src/lib/playwright-runtime.mjs',
+  'src/lib/crawler.mjs'
 ];
 
 for (const file of requiredFiles) {
@@ -132,6 +135,9 @@ for (const packagedFile of ['desktop/**/*', 'src/**/*', 'bin/**/*', 'docs/**/*',
 if (packagedFiles.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Browser runtime should be packaged as extraResources, not from node_modules local-browsers.');
 if (!extraResources.some(resource => resource?.from === 'playwright-browsers' && resource?.to === 'playwright-browsers')) fail('Installer should package playwright-browsers as extraResources.');
 
+const gitignore = read('.gitignore');
+if (!gitignore.includes('playwright-browsers/')) fail('playwright-browsers should be ignored from git because it is generated during installer builds.');
+
 const playwrightRuntime = read('src/lib/playwright-runtime.mjs');
 if (!playwrightRuntime.includes('configureBundledPlaywrightBrowsers')) fail('Playwright runtime helper should export configureBundledPlaywrightBrowsers.');
 if (!playwrightRuntime.includes('hasChromiumBrowser')) fail('Playwright runtime helper should verify Chromium exists before using a browser path.');
@@ -141,6 +147,7 @@ if (!playwrightRuntime.includes('PLAYWRIGHT_BROWSERS_PATH')) fail('Playwright ru
 
 const auditRunner = read('src/audit.mjs');
 if (!auditRunner.includes('getChromium')) fail('Audit runner should use the bundled Playwright runtime helper.');
+if (!auditRunner.includes("version: '3.2.23'")) fail('Audit manifest should record the current app version.');
 
 const doctorRunner = read('src/doctor.mjs');
 if (!doctorRunner.includes('getChromium')) fail('Doctor command should use the bundled Playwright runtime helper.');
@@ -148,6 +155,14 @@ if (!doctorRunner.includes('getChromium')) fail('Doctor command should use the b
 const desktopMain = read('desktop/main.mjs');
 if (!desktopMain.includes('configureBundledPlaywrightBrowsers')) fail('Desktop runtime should configure bundled Playwright browser resolution before discovery imports Playwright.');
 if (!desktopMain.includes('ELECTRON_RUN_AS_NODE')) fail('Desktop runtime should use Node mode for packaged audit runner.');
+if (!desktopMain.includes('clampNumber(data.maxPages, 80, 1, 250)')) fail('Discovery preview should respect UI max pages with a safe cap.');
+if (!desktopMain.includes('discoveryTimeoutMs(maxPages, depth)')) fail('Discovery timeout should scale with UI settings.');
+if (!desktopMain.includes('Discovery timeout:')) fail('Discovery log should show active timeout.');
+
+const crawler = read('src/lib/crawler.mjs');
+for (const requiredText of ['collectSitemapCandidates', 'crawlCandidates', 'revealNavigationControls', 'harvestAppRouteCandidates', 'routeStringsFromText', 'bundleRoutesFound', 'ASSET_PATH_PREFIXES', 'waitForDiscoveryCandidate']) {
+  if (!crawler.includes(requiredText)) fail(`Crawler should include hardened discovery feature: ${requiredText}`);
+}
 
 for (const docFile of ['README.md', 'README FIRST - WINDOWS.txt', 'CHANGELOG.md', 'SECURITY.md']) {
   const content = read(docFile);
@@ -209,12 +224,11 @@ if (!ci.includes('npm run verify')) fail('CI should run npm run verify.');
 
 for (const workflow of ['.github/workflows/build-windows-exe.yml', '.github/workflows/release-windows.yml']) {
   const content = read(workflow);
-  if (!content.includes('npm run check')) fail(`${workflow} should run npm run check.`);
-  if (!content.includes('npm run check:repo')) fail(`${workflow} should run npm run check:repo.`);
-  if (!content.includes('npm run check:installer')) fail(`${workflow} should run npm run check:installer.`);
-  if (!content.includes('npm run preflight')) fail(`${workflow} should run npm run preflight.`);
+  if (!content.includes('npm run verify')) fail(`${workflow} should run npm run verify.`);
   if (!content.includes('npm run dist:installer')) fail(`${workflow} should build the Windows installer.`);
   if (!content.includes('release/install.exe')) fail(`${workflow} should use release/install.exe.`);
+  if (!content.includes('chrome-headless-shell.exe')) fail(`${workflow} should check the bundled Chromium executable exists.`);
+  if (!content.includes('100MB')) fail(`${workflow} should check install.exe is large enough to include the browser runtime.`);
   if (content.includes('Windows-Unpacked')) fail(`${workflow} should not publish an unpacked Windows artifact.`);
 }
 
@@ -237,7 +251,12 @@ for (const requiredText of ['createDesktopShortcut', 'createStartMenuShortcut', 
 const installerBatch = read('BUILD WINDOWS INSTALLER.bat');
 if (!installerBatch.includes('npm.cmd run verify')) fail('BUILD WINDOWS INSTALLER.bat should run full verification.');
 if (!installerBatch.includes('npm.cmd run dist:installer')) fail('BUILD WINDOWS INSTALLER.bat should build the setup installer.');
+if (!installerBatch.includes('chrome-headless-shell.exe')) fail('BUILD WINDOWS INSTALLER.bat should check the bundled Chromium executable exists.');
+if (!installerBatch.includes('100000000')) fail('BUILD WINDOWS INSTALLER.bat should check install.exe is substantial.');
 if (!installerBatch.includes('release\\install.exe')) fail('BUILD WINDOWS INSTALLER.bat should expect release\\install.exe.');
+
+const oldExeBatch = read('BUILD WINDOWS EXE.bat');
+if (!oldExeBatch.includes('BUILD WINDOWS INSTALLER.bat') || !oldExeBatch.includes('release\\install.exe')) fail('Old EXE batch file should redirect to the installer build route.');
 
 const prTemplate = read('.github/pull_request_template.md');
 for (const requiredText of ['Pre-merge checklist', 'Testing notes', 'Follow-up work']) {
@@ -248,9 +267,7 @@ const dependabot = read('.github/dependabot.yml');
 if (!dependabot.includes('open-pull-requests-limit: 2')) fail('Dependabot should use a low PR limit to avoid noisy update bursts.');
 if (!dependabot.includes('version-update:semver-major')) fail('Dependabot should explicitly control major update noise.');
 
-if (!exists('package-lock.json')) {
-  note('package-lock.json is not present yet. Keep using npm install until a clean lockfile is generated and committed.');
-}
+if (!exists('package-lock.json')) note('package-lock.json is not present yet. Keep using npm install until a clean lockfile is generated and committed.');
 
 if (failures.length) {
   console.error('\nPre-merge check failed:\n');

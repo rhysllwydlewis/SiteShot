@@ -46,6 +46,7 @@ const requiredFiles = [
   'src/reporting/reports.mjs',
   'scripts/installer-smoke-check.mjs',
   'BUILD WINDOWS INSTALLER.bat',
+  'BUILD WINDOWS EXE.bat',
   '.github/workflows/build-windows-exe.yml',
   '.github/workflows/release-windows.yml'
 ];
@@ -91,16 +92,7 @@ check(typeof scripts['dist:installer'] === 'string' && scripts['dist:installer']
 check(typeof scripts.verify === 'string' && scripts.verify.includes('npm run preflight'), 'verify runs preflight');
 
 const packagedFiles = Array.isArray(build.files) ? build.files : [];
-for (const packagedFile of [
-  'desktop/**/*',
-  'src/**/*',
-  'bin/**/*',
-  'docs/**/*',
-  'scripts/**/*',
-  'package.json',
-  'README.md',
-  'README FIRST - WINDOWS.txt'
-]) {
+for (const packagedFile of ['desktop/**/*', 'src/**/*', 'bin/**/*', 'docs/**/*', 'scripts/**/*', 'package.json', 'README.md', 'README FIRST - WINDOWS.txt']) {
   check(packagedFiles.includes(packagedFile), `packaged file rule: ${packagedFile}`);
 }
 check(!packagedFiles.includes('node_modules/playwright-core/.local-browsers/**/*'), 'browser runtime is not packaged from node_modules local-browsers');
@@ -119,7 +111,10 @@ const runtime = read('src/lib/playwright-runtime.mjs');
 const buildWorkflow = read('.github/workflows/build-windows-exe.yml');
 const releaseWorkflow = read('.github/workflows/release-windows.yml');
 const installerBatch = read('BUILD WINDOWS INSTALLER.bat');
+const oldExeBatch = read('BUILD WINDOWS EXE.bat');
+const gitignore = read('.gitignore');
 
+check(gitignore.includes('playwright-browsers/'), 'playwright-browsers ignored from git');
 check(runtime.includes('resourcesBrowserPath'), 'runtime checks Electron resources browser path');
 check(runtime.includes('playwright-browsers'), 'runtime uses playwright-browsers folder');
 check(runtime.includes('hasChromiumBrowser'), 'runtime verifies Chromium exists before using path');
@@ -128,26 +123,11 @@ check(main.includes('discover-pages'), 'main handles page discovery');
 check(main.includes('open-help-docs'), 'main handles help docs');
 check(main.includes('repairPossiblyEscapedWindowsPath'), 'defensive Windows path repair exists');
 check(main.includes('ensureFallbackReports'), 'fallback report generation exists');
+check(main.includes('clampNumber(data.maxPages, 80, 1, 250)'), 'discovery respects UI max pages with safe cap');
+check(main.includes('discoveryTimeoutMs(maxPages, depth)'), 'discovery timeout scales with UI settings');
+check(main.includes('Discovery timeout:'), 'discovery logs active timeout');
 
-for (const fn of [
-  'runAudit',
-  'discoverPages',
-  'stopAudit',
-  'openPath',
-  'openExternalFile',
-  'chooseFolder',
-  'exportOutputZip',
-  'getVersion',
-  'getStore',
-  'saveProject',
-  'saveTemplate',
-  'deleteStoreItem',
-  'deleteRun',
-  'bulkDeleteRuns',
-  'saveSettings',
-  'windowAction',
-  'openHelpDocs'
-]) {
+for (const fn of ['runAudit', 'discoverPages', 'stopAudit', 'openPath', 'openExternalFile', 'chooseFolder', 'exportOutputZip', 'getVersion', 'getStore', 'saveProject', 'saveTemplate', 'deleteStoreItem', 'deleteRun', 'bulkDeleteRuns', 'saveSettings', 'windowAction', 'openHelpDocs']) {
   check(preload.includes(fn), `preload exposes ${fn}`);
 }
 
@@ -174,6 +154,7 @@ check(!html.includes('Crawl website'), 'Crawl Website tab removed from UI');
 check(html.includes('function startDiscoveryForScope'), 'Auto/Sitemap auto discovery handler exists');
 check(html.includes('function setScopeTabBusy') && html.includes('scope-loading'), 'Auto/Sitemap tab busy state exists');
 check(html.includes('const latestRun=[...runs].sort'), 'Last Run uses newest createdAt run');
+check(html.includes('script/data link references'), 'Auto help text mentions script/data route discovery');
 
 check(audit.includes("version: '3.2.23'"), 'manifest writes current version');
 check(audit.includes('No valid devices selected'), 'audit validates device selection');
@@ -183,21 +164,30 @@ check(crawler.includes('resolveExplicitPage'), 'exact page route resolver exists
 check(crawler.includes('collectSitemapCandidates'), 'sitemap discovery exists');
 check(crawler.includes('crawlCandidates'), 'crawl discovery exists');
 check(crawler.includes('async function revealNavigationControls'), 'crawler reveals navigation controls');
+check(crawler.includes('harvestAppRouteCandidates'), 'crawler harvests app/bundle route candidates');
+check(crawler.includes('routeStringsFromText'), 'crawler extracts route strings from app data and bundles');
+check(crawler.includes('bundleRoutesFound'), 'crawler records bundle route discovery diagnostics');
+check(crawler.includes('ASSET_PATH_PREFIXES'), 'crawler filters asset paths from route discovery');
 check(reports.includes('quick-report.html'), 'quick report output exists');
 check(reports.includes('full-report.html'), 'full professional report output exists');
 check(reports.includes('report.html'), 'selected report alias output exists');
 check(reports.includes('dedupeIssues'), 'report globally de-duplicates issues');
 
+for (const workflowContent of [buildWorkflow, releaseWorkflow]) {
+  check(workflowContent.includes('npm run verify'), 'Windows workflow runs full verification');
+  check(workflowContent.includes('npm run dist:installer'), 'Windows workflow builds installer');
+  check(workflowContent.includes('chrome-headless-shell.exe'), 'Windows workflow checks bundled Chromium exists');
+  check(workflowContent.includes('100MB'), 'Windows workflow checks install.exe is substantial');
+  check(workflowContent.includes('release/install.exe'), 'Windows workflow uses install.exe');
+  check(!workflowContent.includes('Windows-Unpacked'), 'Windows workflow does not publish unpacked package');
+}
 check(buildWorkflow.includes('name: Build Windows Installer'), 'build workflow has installer name');
-check(buildWorkflow.includes('npm run dist:installer'), 'build workflow builds installer');
-check(buildWorkflow.includes('release/install.exe'), 'build workflow uploads install.exe');
-check(!buildWorkflow.includes('Windows-Unpacked'), 'build workflow does not upload unpacked package');
-check(releaseWorkflow.includes('npm run dist:installer'), 'release workflow builds installer');
-check(releaseWorkflow.includes('release/install.exe'), 'release workflow publishes install.exe');
-check(!releaseWorkflow.includes('Windows-Unpacked'), 'release workflow does not publish unpacked package');
 check(installerBatch.includes('npm.cmd run verify'), 'installer batch runs verify before building');
 check(installerBatch.includes('npm.cmd run dist:installer'), 'installer batch builds the setup installer');
+check(installerBatch.includes('chrome-headless-shell.exe'), 'installer batch checks bundled Chromium exists');
+check(installerBatch.includes('100000000'), 'installer batch checks install.exe size');
 check(installerBatch.includes('release\\install.exe'), 'installer batch expects release\\install.exe');
+check(oldExeBatch.includes('BUILD WINDOWS INSTALLER.bat') && oldExeBatch.includes('release\\install.exe'), 'old EXE build redirects to installer build');
 
 if (failed) process.exit(1);
 console.log('Preflight passed.');
