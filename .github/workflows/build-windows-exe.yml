@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build-windows:
-    name: Build unpacked Windows app
+    name: Build Windows installer and unpacked app
     runs-on: windows-latest
 
     steps:
@@ -35,21 +35,36 @@ jobs:
       - name: Run repo checks
         run: npm run check:repo
 
+      - name: Run config checks
+        run: npm run check:config
+
+      - name: Run installer checks
+        run: npm run check:installer
+
       - name: Run app preflight
         run: npm run preflight
 
-      - name: Build Windows app folder
-        run: npm run dist:win
+      - name: Build Windows installer
+        run: npm run dist:installer
 
-      - name: Ensure EXE exists
+      - name: Ensure installer and EXE exist
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path release -Recurse -Filter *.exe
-          if (-not $exe) { throw "No EXE was created" }
+          $installer = Get-ChildItem -Path release -Recurse -Filter '*Setup*.exe' | Select-Object -First 1
+          if (-not $installer) { throw "No Windows installer setup EXE was created" }
+          $exe = Get-ChildItem -Path release -Recurse -Filter 'SiteShot Auditor Studio.exe' | Select-Object -First 1
+          if (-not $exe) { throw "No unpacked app EXE was created" }
+          $installer | Format-Table FullName, Length
           $exe | Format-Table FullName, Length
 
-      - name: Upload Windows artifact
+      - name: Upload Windows installer artifact
         uses: actions/upload-artifact@v7
         with:
-          name: SiteShot-Auditor-Studio-Ultra-Windows
-          path: release
+          name: SiteShot-Auditor-Studio-Ultra-Installer
+          path: release/*Setup*.exe
+
+      - name: Upload unpacked Windows artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: SiteShot-Auditor-Studio-Ultra-Windows-Unpacked
+          path: release/win-unpacked
