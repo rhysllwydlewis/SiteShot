@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parseDevice } from './lib/devices.mjs';
@@ -9,6 +8,7 @@ import { capturePageForDevice } from './lib/capture.mjs';
 import { splitList } from './lib/utils.mjs';
 import { writeAllReports } from './reporting/reports.mjs';
 import { runSiteSeoChecks } from './modules/seo.mjs';
+import { getChromium } from './lib/playwright-runtime.mjs';
 
 export async function runAudit(rawOptions) {
   const options = await loadConfig(rawOptions);
@@ -20,6 +20,7 @@ export async function runAudit(rawOptions) {
 
   let browser;
   try {
+    const chromium = await getChromium();
     browser = await chromium.launch({ headless: true });
     const pages = await discoverPages(browser, options);
 
