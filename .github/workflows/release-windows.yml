@@ -49,17 +49,11 @@ jobs:
       - name: Build Windows installer
         run: npm run dist:installer
 
-      - name: Ensure release assets exist
+      - name: Ensure install.exe exists
         shell: pwsh
         run: |
           $installer = Join-Path "release" "install.exe"
           if (-not (Test-Path $installer)) { throw "No Windows install.exe was created" }
-          $appPath = Join-Path "release" "win-unpacked"
-          if (-not (Test-Path $appPath)) { throw "Missing win-unpacked output" }
-          $zipPath = Join-Path "release" "SiteShot-Auditor-Studio-Ultra-Windows-Unpacked.zip"
-          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-          Compress-Archive -Path "$appPath\*" -DestinationPath $zipPath -Force
-          if (-not (Test-Path $zipPath)) { throw "Unpacked release zip was not created" }
           Get-Item $installer | Format-Table FullName, Length
 
       - name: Publish GitHub release
@@ -70,11 +64,8 @@ jobs:
           body: |
             SiteShot Auditor Studio Ultra Windows release.
 
-            Recommended download: `install.exe`.
+            Download the single Windows installer: `install.exe`.
 
             Run install.exe, keep the desktop shortcut option selected, then launch SiteShot Auditor Studio from the desktop or Start Menu.
-
-            The unpacked zip is included as a fallback for advanced/manual use only.
           files: |
             release/install.exe
-            release/SiteShot-Auditor-Studio-Ultra-Windows-Unpacked.zip
