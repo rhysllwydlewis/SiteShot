@@ -30,31 +30,34 @@ LAST RUN BEHAVIOUR
 - The sidebar Last Run card also opens Audit Runs.
 - Last Run uses the newest saved run by createdAt, rather than assuming the first stored item is newest.
 
-HOW TO RUN ON WINDOWS
+HOW NORMAL USERS SHOULD INSTALL ON WINDOWS
 
-1. Extract the zip.
-2. Optional but recommended: run UNBLOCK WINDOWS FILES.bat.
-3. Double-click START SiteShot Auditor Studio.bat to start from source.
-4. To build the local Windows app, double-click BUILD WINDOWS EXE.bat.
+1. Download install.exe from the latest GitHub Release.
+2. Double-click install.exe.
+3. Keep the desktop shortcut option selected.
+4. Finish the installer.
+5. Launch SiteShot Auditor Studio from the desktop shortcut or the Windows Start Menu.
 
-HOW TO BUILD THE WINDOWS APP
+HOW TO BUILD THE WINDOWS INSTALLER
 
-BUILD WINDOWS EXE.bat will:
+BUILD WINDOWS INSTALLER.bat will:
 
 1. Check that Node.js is installed.
 2. Run npm install.
 3. Install Playwright Chromium.
-4. Run npm run preflight.
-5. Build the unpacked Windows app folder.
-6. Copy the app to:
+4. Run npm run verify.
+5. Build the Windows installer.
+6. Create the one installer file at:
 
-   %LOCALAPPDATA%\Programs\SiteShot Auditor Studio
-
-7. Create Desktop and Start Menu shortcuts.
+   release\install.exe
 
 EXPECTED OUTPUT
 
-The local Windows app should be created at:
+The user-facing Windows installer should be created at:
+
+release\install.exe
+
+The installed app should then be available through the desktop shortcut, the Windows Start Menu, and at:
 
 %LOCALAPPDATA%\Programs\SiteShot Auditor Studio\SiteShot Auditor Studio.exe
 
@@ -63,11 +66,11 @@ GITHUB BUILD NOTES
 The repository includes GitHub Actions for:
 
 - CI checks on push and pull request.
-- Manual Windows EXE/artifact builds.
+- Manual Windows installer/artifact builds.
 - Manual release packaging.
 - Manual EventFlow audit runs.
 
-Before publishing a release, run the Windows build workflow and confirm the uploaded artifact opens correctly on Windows.
+Before publishing a release, run the Windows installer workflow and confirm install.exe opens correctly on Windows, installs the app, creates shortcuts, and launches SiteShot Auditor Studio.
 
 SAFE SECURITY SCOPE
 
