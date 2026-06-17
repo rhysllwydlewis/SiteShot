@@ -3,6 +3,7 @@ import path from 'node:path';
 import { escapeHtml, csvEscape, truncate } from '../lib/utils.mjs';
 import { sortIssues, dedupeIssues } from '../core/issues.mjs';
 import { scoreIssues, severityCounts, riskLabel } from '../core/scoring.mjs';
+import { getChromium } from '../lib/playwright-runtime.mjs';
 
 const REPORT_STYLE_LABELS = {
   quick: 'Basic / Quick Report',
@@ -82,7 +83,7 @@ export async function writeAllReports(outDir, manifest) {
   // The selected report style becomes the main report.html so PDF/Word match the user's selection.
   await fs.writeFile(path.join(outDir, 'report.html'), variants[selectedStyle] || variants.full, 'utf8');
   await fs.writeFile(path.join(outDir, 'report.md'), markdownReport(manifest, issues, summary, selectedStyle), 'utf8');
-  await fs.writeFile(path.join(outDir, 'fix-roadmap.html'), roadmapHtml(manifest, issues, summary), 'utf8');
+  await fs.writeFile(path.join(outDir, 'fix-roadmap.html'), roadmapHtml(manifest, issues, summary, selectedStyle), 'utf8');
   await fs.writeFile(path.join(outDir, 'gallery.html'), galleryHtml(manifest, summary), 'utf8');
 
   await tryWritePdf(outDir);
@@ -91,10 +92,10 @@ export async function writeAllReports(outDir, manifest) {
 
 async function tryWritePdf(outDir) {
   try {
-    const { chromium } = await import('playwright');
+    const chromium = await getChromium();
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
-    await page.goto(`file://${path.resolve(outDir, 'report.html').replace(/\\/g, '/')}`, { waitUntil: 'networkidle' });
+    await page.goto(`file://${path.resolve(outDir, 'report.html').replace(/\/g, '/')}`, { waitUntil: 'networkidle' });
     await page.pdf({ path: path.join(outDir, 'report.pdf'), format: 'A4', printBackground: true, margin: { top: '14mm', right: '10mm', bottom: '14mm', left: '10mm' } });
     await browser.close();
   } catch (error) {
@@ -332,7 +333,8 @@ function htmlReport(manifest, issues, summary, variant = 'full') {
   return htmlShell(title, body);
 }
 
-function roadmapHtml(manifest, issues, summary) {
+function roadmapHtml(manifest, issues, summary, selectedStyle = 'full') {
+  const style = normaliseReportStyle(selectedStyle);
   const groups = [
     ['Immediate', priorityIssues(issues).filter(i => ['Critical','High'].includes(i.severity))],
     ['Next sprint', priorityIssues(issues).filter(i => i.severity === 'Medium')],
