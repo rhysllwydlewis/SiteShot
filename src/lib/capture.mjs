@@ -180,6 +180,7 @@ export async function capturePageForDevice(browser, targetUrl, device, outDir, o
     const moduleList = options.moduleList || [];
     const ctx = { ...options, baseUrl: options.baseUrl || targetUrl };
 
+    // Module results are stored by key, for example moduleData.auth and moduleData.forms.
     if (moduleList.includes('visual')) await runModuleSafely(result, 'visual', 'Visual', targetUrl, () => runVisualModule(page, targetUrl, { flagText: options.flagText, budgets: options.budgets }, initialFile));
     if (moduleList.includes('seo')) await runModuleSafely(result, 'seo', 'SEO', targetUrl, () => runSeoModule(page, targetUrl));
     if (moduleList.includes('accessibility')) await runModuleSafely(result, 'accessibility', 'Accessibility', targetUrl, () => runAccessibilityModule(page, targetUrl));
