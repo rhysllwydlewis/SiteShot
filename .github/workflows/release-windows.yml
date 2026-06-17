@@ -28,33 +28,27 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install Playwright Chromium
-        run: npm run install:browsers
-
-      - name: Run syntax checks
-        run: npm run check
-
-      - name: Run repo checks
-        run: npm run check:repo
-
-      - name: Run config checks
-        run: npm run check:config
-
-      - name: Run installer checks
-        run: npm run check:installer
-
-      - name: Run app preflight
-        run: npm run preflight
+      - name: Run verification
+        run: npm run verify
 
       - name: Build Windows installer
         run: npm run dist:installer
 
-      - name: Ensure install.exe exists
+      - name: Ensure bundled browser exists
+        shell: pwsh
+        run: |
+          $browser = Get-ChildItem -Path "playwright-browsers" -Recurse -Filter "chrome-headless-shell.exe" | Select-Object -First 1
+          if (-not $browser) { throw "Bundled Chromium was not created under playwright-browsers" }
+          $browser | Format-Table FullName, Length
+
+      - name: Ensure install.exe exists and is substantial
         shell: pwsh
         run: |
           $installer = Join-Path "release" "install.exe"
           if (-not (Test-Path $installer)) { throw "No Windows install.exe was created" }
-          Get-Item $installer | Format-Table FullName, Length
+          $item = Get-Item $installer
+          if ($item.Length -lt 100MB) { throw "install.exe is too small to plausibly include the bundled browser runtime: $($item.Length) bytes" }
+          $item | Format-Table FullName, Length
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
