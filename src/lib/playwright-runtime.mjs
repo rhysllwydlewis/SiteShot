@@ -4,12 +4,17 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '..', '..');
-const bundledBrowserPath = path.join(rootDir, 'node_modules', 'playwright-core', '.local-browsers');
+const appRootDir = path.resolve(__dirname, '..', '..');
+const appNodeModulesBrowserPath = path.join(appRootDir, 'node_modules', 'playwright-core', '.local-browsers');
+const appLocalBrowserPath = path.join(appRootDir, 'playwright-browsers');
+const resourcesBrowserPath = process.resourcesPath ? path.join(process.resourcesPath, 'playwright-browsers') : '';
 
-function hasBundledBrowsers() {
+function hasChromiumBrowser(browserPath) {
+  if (!browserPath) return false;
+
   try {
-    return fs.existsSync(bundledBrowserPath) && fs.readdirSync(bundledBrowserPath).some(name => /chromium/i.test(name));
+    if (!fs.existsSync(browserPath)) return false;
+    return fs.readdirSync(browserPath).some(name => /chromium/i.test(name));
   } catch {
     return false;
   }
@@ -19,11 +24,31 @@ function isPackagedRuntime() {
   return Boolean(process.defaultApp === false || process.resourcesPath?.includes('resources'));
 }
 
-export function configureBundledPlaywrightBrowsers() {
-  if (process.env.PLAYWRIGHT_BROWSERS_PATH) return process.env.PLAYWRIGHT_BROWSERS_PATH;
+function findBundledBrowserPath() {
+  const candidates = [
+    resourcesBrowserPath,
+    appLocalBrowserPath,
+    appNodeModulesBrowserPath
+  ];
 
-  if (hasBundledBrowsers() || isPackagedRuntime()) {
-    process.env.PLAYWRIGHT_BROWSERS_PATH = bundledBrowserPath;
+  return candidates.find(hasChromiumBrowser) || '';
+}
+
+export function configureBundledPlaywrightBrowsers() {
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH && hasChromiumBrowser(process.env.PLAYWRIGHT_BROWSERS_PATH)) {
+    return process.env.PLAYWRIGHT_BROWSERS_PATH;
+  }
+
+  const bundledPath = findBundledBrowserPath();
+
+  if (bundledPath) {
+    process.env.PLAYWRIGHT_BROWSERS_PATH = bundledPath;
+    return bundledPath;
+  }
+
+  if (isPackagedRuntime() && resourcesBrowserPath) {
+    process.env.PLAYWRIGHT_BROWSERS_PATH = resourcesBrowserPath;
+    return resourcesBrowserPath;
   }
 
   return process.env.PLAYWRIGHT_BROWSERS_PATH || '';

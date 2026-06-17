@@ -21,7 +21,7 @@
     "zip": "node bin/siteshot.mjs zip",
     "install:browsers": "npx playwright install chromium",
     "install:browsers:with-deps": "npx playwright install --with-deps chromium",
-    "install:browsers:bundled": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium",
+    "install:browsers:bundled": "cross-env PLAYWRIGHT_BROWSERS_PATH=playwright-browsers npx playwright install chromium",
     "dist:win": "electron-builder --win --x64 --dir",
     "pack:win": "electron-builder --win --x64 --dir",
     "dist:installer": "npm run install:browsers:bundled && electron-builder --win nsis --x64",
@@ -62,10 +62,15 @@
       "assets/**/*",
       "docs/**/*",
       "scripts/**/*",
-      "node_modules/playwright-core/.local-browsers/**/*",
       "package.json",
       "README.md",
       "README FIRST - WINDOWS.txt"
+    ],
+    "extraResources": [
+      {
+        "from": "playwright-browsers",
+        "to": "playwright-browsers"
+      }
     ],
     "win": {
       "target": [

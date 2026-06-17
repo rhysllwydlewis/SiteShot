@@ -15,7 +15,7 @@ function hasScript(name, fragment) {
   return typeof scripts[name] === 'string' && (!fragment || scripts[name].includes(fragment));
 }
 
-if (!hasScript('install:browsers:bundled', 'PLAYWRIGHT_BROWSERS_PATH=0')) fail('Missing bundled Playwright browser install script.');
+if (!hasScript('install:browsers:bundled', 'PLAYWRIGHT_BROWSERS_PATH=playwright-browsers')) fail('Bundled Playwright browser install script should install into playwright-browsers.');
 if (!hasScript('dist:installer', 'install:browsers:bundled')) fail('dist:installer should install bundled Playwright browsers before packaging.');
 if (!hasScript('dist:installer', 'electron-builder --win nsis --x64')) fail('Missing dist:installer script for NSIS Windows installer builds.');
 if (!hasScript('installer:win', 'dist:installer')) fail('Missing installer:win convenience script.');
@@ -28,7 +28,11 @@ if (build.artifactName !== 'install.${ext}') fail('Installer artifact name shoul
 
 const files = Array.isArray(build.files) ? build.files : [];
 if (!files.includes('docs/**/*')) fail('Packaged app should include docs so the in-app help link still works after installation.');
-if (!files.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Packaged app should include the bundled Playwright browser runtime.');
+if (files.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Bundled browsers should be packaged as extraResources, not from node_modules.');
+
+const extraResources = Array.isArray(build.extraResources) ? build.extraResources : [];
+const hasPlaywrightResource = extraResources.some(resource => resource?.from === 'playwright-browsers' && resource?.to === 'playwright-browsers');
+if (!hasPlaywrightResource) fail('Installer should package playwright-browsers as extraResources.');
 
 const targets = Array.isArray(win.target) ? win.target : [];
 const hasNsisTarget = targets.some(target => {
@@ -55,6 +59,11 @@ if (nsis.deleteAppDataOnUninstall !== false) fail('Uninstall should not delete u
 for (const requiredFile of ['docs/INSTALLER.md', 'BUILD WINDOWS INSTALLER.bat', '.github/workflows/build-windows-exe.yml', '.github/workflows/release-windows.yml']) {
   if (!fs.existsSync(requiredFile)) fail(`Missing required installer-related file: ${requiredFile}`);
 }
+
+const runtime = fs.readFileSync('src/lib/playwright-runtime.mjs', 'utf8');
+if (!runtime.includes('resourcesBrowserPath')) fail('Runtime should look for Playwright browsers in Electron resources.');
+if (!runtime.includes('playwright-browsers')) fail('Runtime should use the playwright-browsers resource folder.');
+if (!runtime.includes('hasChromiumBrowser')) fail('Runtime should verify a Chromium browser exists before setting the path.');
 
 const buildWorkflow = fs.readFileSync('.github/workflows/build-windows-exe.yml', 'utf8');
 if (!buildWorkflow.includes('npm run dist:installer')) fail('Build Windows workflow should build the installer.');
