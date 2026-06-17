@@ -1,7 +1,7 @@
 {
-  "name": "EventFlow Ultra Website Audit",
+  "name": "EventFlow Public Website Audit",
   "url": "https://event-flow.co.uk",
-  "out": "audit/eventflow-ultra",
+  "out": "audit/eventflow-public",
   "devices": [
     "iphone-se",
     "iphone-14",
@@ -20,14 +20,10 @@
     "/pricing",
     "/for-suppliers",
     "/faq",
-    "/auth",
     "/contact",
     "/legal",
     "/privacy",
-    "/terms",
-    "/forgot-password",
-    "/reset-password",
-    "/verify"
+    "/terms"
   ],
   "maxPages": 80,
   "depth": 2,
@@ -58,7 +54,11 @@
     "/api",
     "/assets",
     "/uploads",
-    "/logout"
+    "/logout",
+    "/auth",
+    "/forgot-password",
+    "/reset-password",
+    "/verify"
   ],
   "flagText": [
     "Dashboard Log out",
