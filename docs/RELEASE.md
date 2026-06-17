@@ -30,7 +30,7 @@ Before treating a build as releasable, confirm:
 
 ## Current packaging approach
 
-The current packaging route intentionally builds an NSIS Windows installer as the main user-facing download. Normal users should receive one file:
+The current packaging route intentionally builds an NSIS Windows installer as the only user-facing download. Normal users should receive one file:
 
 ```text
 install.exe
@@ -46,12 +46,6 @@ Expected installed local copy after running the installer:
 
 ```text
 %LOCALAPPDATA%\Programs\SiteShot Auditor Studio\SiteShot Auditor Studio.exe
-```
-
-The unpacked app output remains available as a fallback/manual artifact only:
-
-```text
-release/win-unpacked/SiteShot Auditor Studio.exe
 ```
 
 ## Lockfile note
