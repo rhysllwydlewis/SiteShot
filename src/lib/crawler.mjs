@@ -463,9 +463,6 @@ export async function collectLinks(page, baseUrl, includeList, excludeList) {
     } catch {}
   }
 
-  const appRoutes = await harvestAppRouteCandidates(page, baseUrl, includeList, excludeList).catch(() => []);
-  for (const item of appRoutes) clean.push(item.url);
-
   return [...new Set(clean)];
 }
 
