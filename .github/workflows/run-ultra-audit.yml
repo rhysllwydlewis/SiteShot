@@ -8,6 +8,9 @@ on:
         required: true
         default: "https://event-flow.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   audit:
     name: Run public SiteShot audit
@@ -15,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
 
@@ -29,10 +32,12 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run public EventFlow audit
-        run: node bin/siteshot.mjs audit --config examples/eventflow-public.ultra-audit.json --url "${{ github.event.inputs.target_url }}"
+        env:
+          TARGET_URL: ${{ github.event.inputs.target_url }}
+        run: node bin/siteshot.mjs audit --config examples/eventflow-public.ultra-audit.json --url "$TARGET_URL"
 
       - name: Upload audit report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: siteshot-ultra-audit-public
           path: audit

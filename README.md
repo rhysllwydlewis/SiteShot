@@ -107,6 +107,8 @@ The repository includes workflows for:
 - Manual release packaging.
 - Manual EventFlow audit runs.
 
+The workflow action baseline is documented in `docs/WORKFLOW-MAINTENANCE.md`.
+
 ## Example configs
 
 - `examples/eventflow-public.ultra-audit.json` audits public EventFlow pages only.
@@ -119,6 +121,7 @@ The repository includes workflows for:
 - `docs/TROUBLESHOOTING.md` - common local build, browser and audit issues.
 - `docs/RELEASE.md` - release process.
 - `docs/ROADMAP.md` - practical product roadmap.
+- `docs/WORKFLOW-MAINTENANCE.md` - GitHub Actions and Dependabot maintenance guidance.
 - `CHANGELOG.md` - version history.
 - `CONTRIBUTING.md` - contribution and PR expectations.
 - `SECURITY.md` - security policy and safe testing scope.
