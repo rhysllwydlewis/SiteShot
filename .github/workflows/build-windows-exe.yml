@@ -8,20 +8,42 @@ on:
 
 jobs:
   build-windows:
+    name: Build unpacked Windows app
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run dist:win
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npm run install:browsers
+
+      - name: Run syntax checks
+        run: npm run check
+
+      - name: Run app preflight
+        run: npm run preflight
+
+      - name: Build Windows app folder
+        run: npm run dist:win
+
       - name: Ensure EXE exists
         shell: pwsh
         run: |
           $exe = Get-ChildItem -Path release -Recurse -Filter *.exe
           if (-not $exe) { throw "No EXE was created" }
-      - uses: actions/upload-artifact@v4
+          $exe | Format-Table FullName, Length
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
         with:
           name: SiteShot-Auditor-Studio-Ultra-Windows
           path: release
