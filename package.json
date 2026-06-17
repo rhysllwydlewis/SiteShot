@@ -58,6 +58,7 @@
       "examples/**/*",
       "templates/**/*",
       "assets/**/*",
+      "docs/**/*",
       "scripts/**/*",
       "package.json",
       "README.md",
