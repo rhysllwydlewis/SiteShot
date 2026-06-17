@@ -79,8 +79,6 @@ export async function writeAllReports(outDir, manifest) {
   await fs.writeFile(path.join(outDir, 'technical-report.html'), variants.technical, 'utf8');
   await fs.writeFile(path.join(outDir, 'full-report.html'), variants.full, 'utf8');
   await fs.writeFile(path.join(outDir, 'client-report.html'), variants.client, 'utf8');
-
-  // The selected report style becomes the main report.html so PDF/Word match the user's selection.
   await fs.writeFile(path.join(outDir, 'report.html'), variants[selectedStyle] || variants.full, 'utf8');
   await fs.writeFile(path.join(outDir, 'report.md'), markdownReport(manifest, issues, summary, selectedStyle), 'utf8');
   await fs.writeFile(path.join(outDir, 'fix-roadmap.html'), roadmapHtml(manifest, issues, summary, selectedStyle), 'utf8');
@@ -95,7 +93,9 @@ async function tryWritePdf(outDir) {
     const chromium = await getChromium();
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
-    await page.goto(`file://${path.resolve(outDir, 'report.html').replace(/\/g, '/')}`, { waitUntil: 'networkidle' });
+    const reportPath = path.resolve(outDir, 'report.html');
+    const fileUrl = `file:///${reportPath.replaceAll(path.sep, '/')}`;
+    await page.goto(fileUrl, { waitUntil: 'networkidle' });
     await page.pdf({ path: path.join(outDir, 'report.pdf'), format: 'A4', printBackground: true, margin: { top: '14mm', right: '10mm', bottom: '14mm', left: '10mm' } });
     await browser.close();
   } catch (error) {
@@ -257,9 +257,9 @@ function htmlShell(title, body) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 :root{font-family:Inter,system-ui,sans-serif;color:#10252c;background:#f2f7f7;--teal:#0f766e;--ink:#10252c;--muted:#60747b;--border:#dbe7e8}
-body{margin:0}.cover{padding:48px;background:radial-gradient(circle at top left,rgba(255,255,255,.24),transparent 30rem),linear-gradient(135deg,#0f766e,#10252c);color:#fff}.cover h1{font-size:44px;margin:0 0 10px}.cover p{opacity:.92;max-width:980px}.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.nav a{color:white;background:rgba(255,255,255,.15);padding:8px 12px;border-radius:999px;text-decoration:none}
-main{max-width:1320px;margin:auto;padding:28px}.panel{background:white;border:1px solid var(--border);border-radius:26px;padding:24px;margin-bottom:22px;box-shadow:0 18px 48px rgba(16,37,44,.08)}.overall{font-size:74px;font-weight:950;line-height:1}.grade{font-size:28px;font-weight:900;color:#0f766e}.scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.score{border-radius:20px;padding:18px;border:1px solid var(--border)}.score span{display:block;color:var(--muted);font-size:13px}.score strong{font-size:34px}.good{background:#e9f8ee}.warn{background:#fff7e2}.bad{background:#fdecec}
-.stats{display:flex;gap:10px;flex-wrap:wrap}.pill{background:#e6f6f2;color:#0b4f4a;border-radius:999px;padding:9px 12px;font-weight:800;font-size:13px}.issue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}.issue{background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px}.issue.critical,.issue.high{border-color:#efaaa4}.issue.medium{border-color:#ffd27d}.issue h3{margin:10px 0 8px}.issue-meta{display:flex;gap:8px;flex-wrap:wrap}.issue-meta span,.issue-meta strong{font-size:12px;padding:5px 8px;border-radius:999px;background:#edf6f6}.issue-meta strong{color:#9f1d1d;background:#fdecec}.muted{color:var(--muted);font-size:13px}pre{white-space:pre-wrap;background:#0d1b1f;color:#d9fff7;padding:12px;border-radius:12px;overflow:auto}code{background:#edf6f6;padding:2px 6px;border-radius:6px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #e4eeee;padding:10px;text-align:left;vertical-align:top}th{background:#f7fbfb;position:sticky;top:0}a{color:#0f766e}.small{font-size:13px;color:var(--muted)}.priority-list{display:grid;gap:12px}.priority-row{border:1px solid var(--border);border-radius:18px;padding:16px;background:#fff}.priority-row strong{display:inline-block;margin-right:8px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+body{margin:0}.cover{padding:48px;background:linear-gradient(135deg,#0f766e,#10252c);color:#fff}.cover h1{font-size:44px;margin:0 0 10px}.cover p{opacity:.92;max-width:980px}.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.nav a{color:white;background:rgba(255,255,255,.15);padding:8px 12px;border-radius:999px;text-decoration:none}
+main{max-width:1320px;margin:auto;padding:28px}.panel{background:white;border:1px solid var(--border);border-radius:26px;padding:24px;margin-bottom:22px}.overall{font-size:74px;font-weight:950;line-height:1}.grade{font-size:28px;font-weight:900;color:#0f766e}.scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.score{border-radius:20px;padding:18px;border:1px solid var(--border)}.score span{display:block;color:var(--muted);font-size:13px}.score strong{font-size:34px}.good{background:#e9f8ee}.warn{background:#fff7e2}.bad{background:#fdecec}
+.stats{display:flex;gap:10px;flex-wrap:wrap}.pill{background:#e6f6f2;color:#0b4f4a;border-radius:999px;padding:9px 12px;font-weight:800;font-size:13px}.issue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}.issue{background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px}.issue h3{margin:10px 0 8px}.issue-meta{display:flex;gap:8px;flex-wrap:wrap}.issue-meta span,.issue-meta strong{font-size:12px;padding:5px 8px;border-radius:999px;background:#edf6f6}.issue-meta strong{color:#9f1d1d;background:#fdecec}.muted{color:var(--muted);font-size:13px}pre{white-space:pre-wrap;background:#0d1b1f;color:#d9fff7;padding:12px;border-radius:12px;overflow:auto}code{background:#edf6f6;padding:2px 6px;border-radius:6px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #e4eeee;padding:10px;text-align:left;vertical-align:top}a{color:#0f766e}.small{font-size:13px;color:var(--muted)}.priority-list{display:grid;gap:12px}.priority-row{border:1px solid var(--border);border-radius:18px;padding:16px;background:#fff}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:800px){.cover h1{font-size:32px}.two-col{grid-template-columns:1fr}.overall{font-size:48px}}
 @media print{.nav{display:none}.panel{box-shadow:none;break-inside:avoid}.cover{background:#0f766e!important}}
 </style></head><body>${body}</body></html>`;
@@ -272,23 +272,12 @@ function supportNav(style = 'full') {
     '<a href="./issues.csv">Issue CSV</a>',
     '<a href="./tickets.md">Developer tickets</a>'
   ];
-
-  if (style === 'quick' || style === 'executive' || style === 'client') {
-    return `<div class="nav">${evidenceLinks.join('')}</div>`;
-  }
-
-  return `<div class="nav">${[
-    ...evidenceLinks,
-    '<a href="./manifest.json">Audit manifest</a>',
-    '<a href="./issues.json">Issue JSON</a>'
-  ].join('')}</div>`;
+  if (style === 'quick' || style === 'executive' || style === 'client') return `<div class="nav">${evidenceLinks.join('')}</div>`;
+  return `<div class="nav">${[...evidenceLinks, '<a href="./manifest.json">Audit manifest</a>', '<a href="./issues.json">Issue JSON</a>'].join('')}</div>`;
 }
 
 function relatedReportOutputsNote(selectedStyle) {
-  return `<section class="panel"><h2>Other available outputs</h2>
-    <p>This document is the selected ${escapeHtml(reportStyleLabel(selectedStyle))}. Other report variants may also be generated by the app for internal use, but they are not linked in the main report header so this report remains a clear standalone deliverable.</p>
-    <p class="small">Open alternate report styles from the SiteShot Auditor Studio Reports panel if needed.</p>
-  </section>`;
+  return `<section class="panel"><h2>Other available outputs</h2><p>This document is the selected ${escapeHtml(reportStyleLabel(selectedStyle))}. Other report variants may also be generated by the app for internal use.</p></section>`;
 }
 
 function htmlReport(manifest, issues, summary, variant = 'full') {
@@ -298,38 +287,29 @@ function htmlReport(manifest, issues, summary, variant = 'full') {
   const major = priority.filter(i => ['Critical', 'High'].includes(i.severity));
   const scoreCards = Object.entries(summary.scores.categoryScores).map(([cat, score]) => `<div class="score ${scoreClass(score)}"><span>${escapeHtml(cat)}</span><strong>${score}</strong></div>`).join('');
   const issueRows = priority.map(i => `<tr><td>${escapeHtml(i.severity)}</td><td>${escapeHtml(i.category)}</td><td>${escapeHtml(i.title)}</td><td>${escapeHtml(i.url)}</td><td>${escapeHtml(i.recommendation)}</td></tr>`).join('');
-
   const cover = `<section class="cover"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(reportDescription(style))}</p><p>${escapeHtml(manifest.targetUrl)} · ${escapeHtml(manifest.createdAt)} · Selected style: ${escapeHtml(summary.selectedReportLabel)}</p>${supportNav(style)}</section>`;
-
   const summaryPanel = `<section class="panel"><h2>Summary</h2><div class="overall">${summary.scores.overall}/100 <span class="grade">${escapeHtml(summary.scores.grade)}</span></div><p><b>${escapeHtml(summary.riskLabel)}</b></p><p>${escapeHtml(summarySentence(summary))}</p><div class="stats">${Object.entries(summary.severityCounts).map(([s,c])=>`<span class="pill">${escapeHtml(s)}: ${escapeHtml(c)}</span>`).join('')}</div></section>`;
 
   if (style === 'quick') {
     const top = priority.slice(0, 8);
     const quickRows = top.map((i, idx) => `<div class="priority-row"><strong>${idx + 1}. ${escapeHtml(i.severity)}</strong> ${escapeHtml(i.title)}<p class="small">${escapeHtml(i.category)} · ${escapeHtml(i.url)}</p><p>${escapeHtml(i.recommendation)}</p></div>`).join('') || '<p>No priority findings were identified.</p>';
-    const body = `${cover}<main>${summaryPanel}<section class="panel"><h2>Top priorities</h2><div class="priority-list">${quickRows}</div></section><section class="panel"><h2>Quick decision view</h2><div class="two-col"><div><h3>What to fix first</h3><p>Start with Critical and High findings, then Medium findings that affect conversion, trust, accessibility or routing.</p></div><div><h3>Supporting evidence</h3><p>Use the Fix Roadmap, Screenshot Gallery, Issue CSV and Developer Tickets for follow-up work.</p></div></div></section>${relatedReportOutputsNote(style)}</main>`;
-    return htmlShell(title, body);
+    return htmlShell(title, `${cover}<main>${summaryPanel}<section class="panel"><h2>Top priorities</h2><div class="priority-list">${quickRows}</div></section>${relatedReportOutputsNote(style)}</main>`);
   }
 
   const scorePanel = `<section class="panel"><h2>Category Scores</h2><div class="scores">${scoreCards}</div></section>`;
   const keyLimit = style === 'executive' || style === 'client' ? 12 : 30;
   const showEvidence = style === 'technical' || style === 'full';
   const keyCards = (major.length ? major : priority).slice(0, keyLimit).map(i => issueCard(i, { showEvidence })).join('') || '<p>No key findings were identified.</p>';
-  const keyPanel = `<section class="panel"><h2>${style === 'technical' ? 'Priority Technical Findings' : 'Key Findings'}</h2><div class="issue-grid">${keyCards}</div></section>`;
-
-  let body = `${cover}<main>${summaryPanel}${scorePanel}${keyPanel}`;
+  let body = `${cover}<main>${summaryPanel}${scorePanel}<section class="panel"><h2>${style === 'technical' ? 'Priority Technical Findings' : 'Key Findings'}</h2><div class="issue-grid">${keyCards}</div></section>`;
 
   if (style === 'technical') {
-    const grouped = groupByCategory(priority).map(([cat, list]) => `<section class="panel"><h2>${escapeHtml(cat)}</h2><div class="issue-grid">${list.map(i => issueCard(i, { showEvidence: true })).join('')}</div></section>`).join('');
-    body += `<section class="panel"><h2>Developer Notes</h2><p>This technical report includes evidence and selectors where available. Use <a href="./tickets.md">developer tickets</a> and <a href="./issues.csv">issues.csv</a> for implementation planning.</p></section>${grouped}`;
+    body += groupByCategory(priority).map(([cat, list]) => `<section class="panel"><h2>${escapeHtml(cat)}</h2><div class="issue-grid">${list.map(i => issueCard(i, { showEvidence: true })).join('')}</div></section>`).join('');
   } else if (style === 'full') {
     body += `<section class="panel"><h2>Full Issue Register</h2><table><thead><tr><th>Severity</th><th>Category</th><th>Issue</th><th>URL</th><th>Recommendation</th></tr></thead><tbody>${issueRows}</tbody></table></section>`;
-    body += `<section class="panel"><h2>Appendices</h2><p>Supporting outputs: <a href="./gallery.html">screenshot gallery</a>, <a href="./issues.csv">issue CSV</a>, <a href="./issues.json">issue JSON</a>, <a href="./tickets.md">developer tickets</a>, and <a href="./manifest.json">full manifest</a>.</p></section>`;
   } else {
     body += `<section class="panel"><h2>Recommended next steps</h2><ol><li>Resolve Critical and High findings first.</li><li>Review the Technical Report with the development team.</li><li>Re-run the audit after fixes to confirm progress.</li></ol></section>`;
   }
-
-  body += relatedReportOutputsNote(style);
-  body += `<section class="panel"><h2>Safety Statement</h2><p>This audit used safe, passive checks only. It did not exploit, brute-force, inject payloads, bypass login, or perform destructive testing.</p></section></main>`;
+  body += `${relatedReportOutputsNote(style)}<section class="panel"><h2>Safety Statement</h2><p>This audit used safe, passive checks only.</p></section></main>`;
   return htmlShell(title, body);
 }
 
@@ -346,5 +326,5 @@ function roadmapHtml(manifest, issues, summary, selectedStyle = 'full') {
 
 function galleryHtml(manifest, summary) {
   const cards = manifest.results.flatMap(page => page.captures.flatMap(capture => (capture.files || []).map(file => `<article class="card"><a href="./${escapeHtml(file)}" target="_blank"><img src="./${escapeHtml(file)}" alt="${escapeHtml(file)}"></a><div class="meta"><strong>${escapeHtml(file.replace('screenshots/',''))}</strong><span>${escapeHtml(new URL(page.url).pathname || '/')} · ${escapeHtml(capture.deviceName)}</span><span>${capture.pageNotFound ? 'Route not found' : ((capture.issues||[]).length + ' issues')}</span></div></article>`))).join('');
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Screenshot Gallery</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#f3f7f7;font-family:Inter,system-ui,sans-serif;color:#10252c}header{position:sticky;top:0;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-bottom:1px solid #dbe7e8;padding:20px;z-index:2}main{padding:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}.card{background:white;border:1px solid #dbe7e8;border-radius:18px;overflow:hidden;box-shadow:0 14px 34px rgba(16,37,44,.08)}img{width:100%;height:430px;object-fit:cover;object-position:top}.meta{padding:12px;display:grid;gap:4px;font-size:12px;color:#60747b}.meta strong{color:#10252c}a{color:#0f766e}</style></head><body><header><h1>Screenshot Gallery</h1><p>${summary.screenshotCount} screenshots · <a href="./report.html">Selected report</a> · <a href="./fix-roadmap.html">Fix roadmap</a></p></header><main>${cards}</main></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Screenshot Gallery</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#f3f7f7;font-family:Inter,system-ui,sans-serif;color:#10252c}header{position:sticky;top:0;background:rgba(255,255,255,.94);border-bottom:1px solid #dbe7e8;padding:20px;z-index:2}main{padding:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}.card{background:white;border:1px solid #dbe7e8;border-radius:18px;overflow:hidden}img{width:100%;height:430px;object-fit:cover;object-position:top}.meta{padding:12px;display:grid;gap:4px;font-size:12px;color:#60747b}.meta strong{color:#10252c}a{color:#0f766e}</style></head><body><header><h1>Screenshot Gallery</h1><p>${summary.screenshotCount} screenshots · <a href="./report.html">Selected report</a> · <a href="./fix-roadmap.html">Fix roadmap</a></p></header><main>${cards}</main></body></html>`;
 }
