@@ -1,11 +1,11 @@
 # Windows installer
 
-SiteShot Auditor Studio Ultra should be distributed to normal users as a Windows setup installer, not as a loose developer folder.
+SiteShot Auditor Studio Ultra should be distributed to normal users as one Windows setup installer file, not as a loose developer folder.
 
 ## Recommended user flow
 
-1. Download the latest `SiteShot-Auditor-Studio-Ultra-Setup-*.exe` file from the GitHub Release.
-2. Run the installer.
+1. Download `install.exe` from the latest GitHub Release.
+2. Run `install.exe`.
 3. Keep the desktop shortcut option selected.
 4. Finish the installer.
 5. Launch **SiteShot Auditor Studio** from the desktop shortcut or the Windows Start Menu.
@@ -14,7 +14,8 @@ SiteShot Auditor Studio Ultra should be distributed to normal users as a Windows
 
 The installer is configured to:
 
-- use a clear setup file name with the product version
+- produce one simple download file named `install.exe`
+- install the packaged app files from that installer
 - install per user by default, avoiding unnecessary administrator prompts
 - allow elevation when Windows requires it
 - allow the user to change the installation directory
@@ -41,7 +42,7 @@ BUILD WINDOWS INSTALLER.bat
 Expected installer output:
 
 ```text
-release/SiteShot-Auditor-Studio-Ultra-Setup-<version>-x64.exe
+release/install.exe
 ```
 
 Expected unpacked output:
@@ -60,7 +61,7 @@ Actions → Build Windows EXE → Run workflow
 
 The workflow uploads two artifacts:
 
-- `SiteShot-Auditor-Studio-Ultra-Installer` for the setup EXE
+- `SiteShot-Auditor-Studio-Ultra-Installer` containing `install.exe`
 - `SiteShot-Auditor-Studio-Ultra-Windows-Unpacked` for fallback/manual use
 
 Use:
@@ -69,7 +70,7 @@ Use:
 Actions → Release Windows Build → Run workflow
 ```
 
-to publish the installer as a GitHub Release asset.
+to publish `install.exe` as a GitHub Release asset.
 
 ## Branding follow-up
 
