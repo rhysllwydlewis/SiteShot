@@ -94,24 +94,13 @@ const build = pkg?.build || {};
 const win = build.win || {};
 const nsis = build.nsis || {};
 const targets = win.target || [];
+const packagedFiles = Array.isArray(build.files) ? build.files : [];
+const extraResources = Array.isArray(build.extraResources) ? build.extraResources : [];
 
 if (!version) fail('package.json is missing a version.');
 if (pkg?.name !== 'siteshot-auditor-studio-ultra') fail('package.json name does not match the product package name.');
 
-for (const script of [
-  'check',
-  'preflight',
-  'verify',
-  'check:repo',
-  'check:config',
-  'check:installer',
-  'install:browsers:bundled',
-  'dist:installer',
-  'installer:win',
-  'audit:eventflow',
-  'audit:eventflow:public',
-  'audit:eventflow:full'
-]) {
+for (const script of ['check', 'preflight', 'verify', 'check:repo', 'check:config', 'check:installer', 'install:browsers:bundled', 'dist:installer', 'installer:win', 'audit:eventflow', 'audit:eventflow:public', 'audit:eventflow:full']) {
   if (!pkg?.scripts?.[script]) fail(`Missing npm script: ${script}`);
 }
 
@@ -120,7 +109,7 @@ if (!pkg?.scripts?.verify?.includes('npm run check:installer')) fail('verify sho
 if (!pkg?.scripts?.verify?.includes('npm run preflight')) fail('verify should run preflight checks.');
 if (!pkg?.scripts?.['dist:installer']?.includes('install:browsers:bundled')) fail('dist:installer should bundle Playwright browsers before packaging.');
 if (!pkg?.scripts?.['dist:installer']?.includes('electron-builder --win nsis --x64')) fail('dist:installer should build the Windows NSIS x64 installer.');
-if (!pkg?.scripts?.['install:browsers:bundled']?.includes('PLAYWRIGHT_BROWSERS_PATH=0')) fail('install:browsers:bundled should use PLAYWRIGHT_BROWSERS_PATH=0.');
+if (!pkg?.scripts?.['install:browsers:bundled']?.includes('PLAYWRIGHT_BROWSERS_PATH=playwright-browsers')) fail('install:browsers:bundled should install browsers into playwright-browsers.');
 if (!pkg?.devDependencies?.['cross-env']) fail('cross-env should be present for cross-platform bundled browser installation.');
 
 if (build.appId !== 'uk.siteshot.auditorstudio') fail('package.json build.appId should remain stable.');
@@ -137,23 +126,17 @@ if (nsis.createStartMenuShortcut !== true) fail('Installer should create a Start
 if (nsis.shortcutName !== 'SiteShot Auditor Studio') fail('Installer shortcut name should match the product name.');
 if (nsis.runAfterFinish !== true) fail('Installer should offer to launch after install.');
 
-for (const packagedFile of [
-  'desktop/**/*',
-  'src/**/*',
-  'bin/**/*',
-  'docs/**/*',
-  'scripts/**/*',
-  'node_modules/playwright-core/.local-browsers/**/*',
-  'package.json',
-  'README.md',
-  'README FIRST - WINDOWS.txt'
-]) {
-  if (!pkg?.build?.files?.includes(packagedFile)) fail(`Packaged app should include: ${packagedFile}`);
+for (const packagedFile of ['desktop/**/*', 'src/**/*', 'bin/**/*', 'docs/**/*', 'scripts/**/*', 'package.json', 'README.md', 'README FIRST - WINDOWS.txt']) {
+  if (!packagedFiles.includes(packagedFile)) fail(`Packaged app should include: ${packagedFile}`);
 }
+if (packagedFiles.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Browser runtime should be packaged as extraResources, not from node_modules local-browsers.');
+if (!extraResources.some(resource => resource?.from === 'playwright-browsers' && resource?.to === 'playwright-browsers')) fail('Installer should package playwright-browsers as extraResources.');
 
 const playwrightRuntime = read('src/lib/playwright-runtime.mjs');
 if (!playwrightRuntime.includes('configureBundledPlaywrightBrowsers')) fail('Playwright runtime helper should export configureBundledPlaywrightBrowsers.');
-if (!playwrightRuntime.includes('hasBundledBrowsers')) fail('Playwright runtime helper should avoid forcing a missing bundled browser path during source runs.');
+if (!playwrightRuntime.includes('hasChromiumBrowser')) fail('Playwright runtime helper should verify Chromium exists before using a browser path.');
+if (!playwrightRuntime.includes('resourcesBrowserPath')) fail('Playwright runtime helper should look in Electron resources.');
+if (!playwrightRuntime.includes('playwright-browsers')) fail('Playwright runtime helper should use the playwright-browsers resource folder.');
 if (!playwrightRuntime.includes('PLAYWRIGHT_BROWSERS_PATH')) fail('Playwright runtime helper should configure PLAYWRIGHT_BROWSERS_PATH.');
 
 const auditRunner = read('src/audit.mjs');
@@ -192,22 +175,15 @@ for (const requiredText of ['install.exe', 'desktop shortcut', 'Start Menu', 'np
 }
 if (installerDoc.includes('SiteShot-Auditor-Studio-Ultra-Setup')) fail('docs/INSTALLER.md should not reference the old versioned setup filename.');
 
-for (const example of [
-  'examples/eventflow.ultra-audit.json',
-  'examples/eventflow-public.ultra-audit.json',
-  'examples/eventflow-full.ultra-audit.json'
-]) {
+for (const example of ['examples/eventflow.ultra-audit.json', 'examples/eventflow-public.ultra-audit.json', 'examples/eventflow-full.ultra-audit.json']) {
   const json = readJson(example);
   if (!json) continue;
-
   for (const key of ['name', 'url', 'out', 'devices', 'pages', 'modules', 'reportStyle', 'capture', 'exclude', 'flagText', 'budgets', 'security']) {
     if (!(key in json)) fail(`${example} is missing required key: ${key}`);
   }
-
   for (const key of ['pages', 'devices', 'modules', 'exclude', 'flagText']) {
     if (!Array.isArray(json[key])) fail(`${example}.${key} must be an array.`);
   }
-
   if (Array.isArray(json.pages) && json.pages.length === 0) fail(`${example} must include at least one page.`);
   if (Array.isArray(json.devices) && json.devices.length === 0) fail(`${example} must include at least one device.`);
   if (Array.isArray(json.modules) && json.modules.length === 0) fail(`${example} must include at least one module.`);
@@ -217,7 +193,6 @@ const publicExample = readJson('examples/eventflow-public.ultra-audit.json');
 const publicOnlyExample = readJson('examples/eventflow.ultra-audit.json');
 const fullExample = readJson('examples/eventflow-full.ultra-audit.json');
 const privateRoutes = ['/auth', '/forgot-password', '/reset-password', '/verify'];
-
 if (publicExample && publicOnlyExample && fullExample) {
   for (const route of privateRoutes) {
     if (publicExample.pages.includes(route)) fail(`Public EventFlow example should not include ${route}.`);
@@ -255,7 +230,7 @@ if (!configSmokeCheck.includes('CLI URL should win')) fail('Config smoke check s
 if (!configSmokeCheck.includes('Invalid maxPages should fall back')) fail('Config smoke check should cover numeric default handling.');
 
 const installerSmokeCheck = read('scripts/installer-smoke-check.mjs');
-for (const requiredText of ['createDesktopShortcut', 'createStartMenuShortcut', 'dist:installer', 'PLAYWRIGHT_BROWSERS_PATH=0', 'node_modules/playwright-core/.local-browsers/**/*', 'install.${ext}', 'release/install.exe']) {
+for (const requiredText of ['createDesktopShortcut', 'createStartMenuShortcut', 'dist:installer', 'PLAYWRIGHT_BROWSERS_PATH=playwright-browsers', 'playwright-browsers', 'extraResources', 'install.${ext}', 'release/install.exe']) {
   if (!installerSmokeCheck.includes(requiredText)) fail(`Installer smoke check should verify: ${requiredText}`);
 }
 
