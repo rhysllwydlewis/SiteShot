@@ -38,6 +38,7 @@ const requiredScripts = [
   'check:repo',
   'check:config',
   'check:installer',
+  'install:browsers:bundled',
   'dist:installer',
   'installer:win',
   'audit:eventflow',
@@ -128,6 +129,10 @@ for (const script of requiredScripts) {
 
 if (!pkg?.scripts?.verify?.includes('npm run check:config')) fail('verify should run config smoke checks.');
 if (!pkg?.scripts?.verify?.includes('npm run check:installer')) fail('verify should run installer smoke checks.');
+if (!pkg?.scripts?.['dist:installer']?.includes('install:browsers:bundled')) fail('dist:installer should bundle Playwright browsers before packaging.');
+if (!pkg?.scripts?.['install:browsers:bundled']?.includes('PLAYWRIGHT_BROWSERS_PATH=0')) fail('install:browsers:bundled should use PLAYWRIGHT_BROWSERS_PATH=0.');
+if (!pkg?.devDependencies?.['cross-env']) fail('cross-env should be present for cross-platform bundled browser installation.');
+if (!pkg?.build?.files?.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Packaged app should include bundled Playwright browsers.');
 
 for (const docFile of ['README.md', 'README FIRST - WINDOWS.txt', 'CHANGELOG.md', 'SECURITY.md']) {
   const content = read(docFile);
@@ -220,6 +225,8 @@ const installerSmokeCheck = read('scripts/installer-smoke-check.mjs');
 if (!installerSmokeCheck.includes('createDesktopShortcut')) fail('Installer smoke check should verify desktop shortcut behaviour.');
 if (!installerSmokeCheck.includes('createStartMenuShortcut')) fail('Installer smoke check should verify Start Menu shortcut behaviour.');
 if (!installerSmokeCheck.includes('dist:installer')) fail('Installer smoke check should verify installer build scripts.');
+if (!installerSmokeCheck.includes('PLAYWRIGHT_BROWSERS_PATH=0')) fail('Installer smoke check should verify bundled Playwright browser install.');
+if (!installerSmokeCheck.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Installer smoke check should verify bundled browser files are packaged.');
 
 const installerBatch = read('BUILD WINDOWS INSTALLER.bat');
 if (!installerBatch.includes('npm.cmd run verify')) fail('BUILD WINDOWS INSTALLER.bat should run full verification.');
