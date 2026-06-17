@@ -10,6 +10,7 @@ const requiredFiles = [
   'CHANGELOG.md',
   'CONTRIBUTING.md',
   'SECURITY.md',
+  'docs/INSTALLER.md',
   'docs/RELEASE.md',
   'docs/ROADMAP.md',
   'docs/SAFETY.md',
@@ -25,7 +26,8 @@ const requiredFiles = [
   'examples/eventflow.ultra-audit.json',
   'examples/eventflow-public.ultra-audit.json',
   'examples/eventflow-full.ultra-audit.json',
-  'scripts/config-smoke-check.mjs'
+  'scripts/config-smoke-check.mjs',
+  'scripts/installer-smoke-check.mjs'
 ];
 
 const requiredScripts = [
@@ -34,6 +36,9 @@ const requiredScripts = [
   'verify',
   'check:repo',
   'check:config',
+  'check:installer',
+  'dist:installer',
+  'installer:win',
   'audit:eventflow',
   'audit:eventflow:public',
   'audit:eventflow:full'
@@ -121,6 +126,7 @@ for (const script of requiredScripts) {
 }
 
 if (!pkg?.scripts?.verify?.includes('npm run check:config')) fail('verify should run config smoke checks.');
+if (!pkg?.scripts?.verify?.includes('npm run check:installer')) fail('verify should run installer smoke checks.');
 
 for (const docFile of ['README.md', 'README FIRST - WINDOWS.txt', 'CHANGELOG.md', 'SECURITY.md']) {
   const content = read(docFile);
@@ -140,6 +146,11 @@ for (const requiredText of ['npm run verify', 'docs/TROUBLESHOOTING.md', 'SECURI
 const releaseDoc = read('docs/RELEASE.md');
 if (!releaseDoc.includes('package-lock.json')) fail('docs/RELEASE.md should document the package-lock follow-up.');
 if (!releaseDoc.includes('npm run verify')) fail('docs/RELEASE.md should refer to npm run verify.');
+
+const installerDoc = read('docs/INSTALLER.md');
+for (const requiredText of ['SiteShot-Auditor-Studio-Ultra-Setup', 'desktop shortcut', 'Start Menu', 'npm run dist:installer']) {
+  if (!installerDoc.includes(requiredText)) fail(`docs/INSTALLER.md is missing installer guidance: ${requiredText}`);
+}
 
 for (const example of [
   'examples/eventflow.ultra-audit.json',
@@ -188,7 +199,9 @@ for (const workflow of ['.github/workflows/build-windows-exe.yml', '.github/work
   const content = read(workflow);
   if (!content.includes('npm run check')) fail(`${workflow} should run npm run check.`);
   if (!content.includes('npm run check:repo')) fail(`${workflow} should run npm run check:repo.`);
+  if (!content.includes('npm run check:installer')) fail(`${workflow} should run npm run check:installer.`);
   if (!content.includes('npm run preflight')) fail(`${workflow} should run npm run preflight.`);
+  if (!content.includes('npm run dist:installer')) fail(`${workflow} should build the Windows installer.`);
 }
 
 for (const workflow of workflowFiles) {
@@ -201,6 +214,11 @@ for (const workflow of workflowFiles) {
 const configSmokeCheck = read('scripts/config-smoke-check.mjs');
 if (!configSmokeCheck.includes('CLI URL should win')) fail('Config smoke check should verify workflow/CLI URL handling.');
 if (!configSmokeCheck.includes('Invalid maxPages should fall back')) fail('Config smoke check should cover numeric default handling.');
+
+const installerSmokeCheck = read('scripts/installer-smoke-check.mjs');
+if (!installerSmokeCheck.includes('createDesktopShortcut')) fail('Installer smoke check should verify desktop shortcut behaviour.');
+if (!installerSmokeCheck.includes('createStartMenuShortcut')) fail('Installer smoke check should verify Start Menu shortcut behaviour.');
+if (!installerSmokeCheck.includes('dist:installer')) fail('Installer smoke check should verify installer build scripts.');
 
 const prTemplate = read('.github/pull_request_template.md');
 for (const requiredText of ['Pre-merge checklist', 'Testing notes', 'Follow-up work']) {
