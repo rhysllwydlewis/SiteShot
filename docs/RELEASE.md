@@ -5,11 +5,24 @@ This project currently builds an unpacked Windows app using Electron Builder.
 ## Recommended release flow
 
 1. Merge all code changes into `main`.
-2. Run the CI workflow and confirm `npm run check` and `npm run preflight` pass.
+2. Run the CI workflow and confirm `npm run verify` passes.
 3. Run the Build Windows EXE workflow manually to confirm the Windows artifact builds.
-4. Run the Release Windows Build workflow with a tag such as `v3.2.23`.
-5. Download the release zip and smoke-test it on Windows.
-6. Publish/share the release once the app opens and an audit can be started.
+4. Download the Windows artifact and test it locally.
+5. Run the Release Windows Build workflow with a tag such as `v3.2.23`.
+6. Download the release zip and test it on Windows.
+7. Share the release once the app opens and an audit can be started.
+
+## Pre-release test
+
+Before treating a build as releasable, confirm:
+
+- the app opens correctly
+- Exact Pages is the default scope
+- Auto starts discovery when selected
+- Sitemap starts discovery when selected
+- Last Run opens Audit Runs from the topbar and sidebar
+- an audit can be started against a controlled page list
+- the output folder contains report HTML and issue files
 
 ## Current packaging approach
 
@@ -37,7 +50,7 @@ Suggested local command:
 npm install
 ```
 
-Then commit the generated `package-lock.json` in a small follow-up PR.
+Then commit the generated `package-lock.json` in a follow-up PR.
 
 ## Future installer route
 
