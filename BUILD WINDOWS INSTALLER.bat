@@ -39,15 +39,6 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Ensuring Playwright Chromium is installed...
-call npm.cmd run install:browsers
-if %errorlevel% neq 0 (
-  echo.
-  echo WARNING: Playwright browser install failed.
-  echo The installer can still be built, but audits may fail until Chromium is installed.
-)
-
-echo.
 echo Running full verification...
 call npm.cmd run verify
 if %errorlevel% neq 0 (
@@ -59,6 +50,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Building Windows setup installer...
+echo This step downloads Playwright Chromium into the packaged browser resource folder.
 call npm.cmd run dist:installer
 if %errorlevel% neq 0 (
   echo.
