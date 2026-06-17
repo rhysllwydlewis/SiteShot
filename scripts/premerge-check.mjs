@@ -21,6 +21,7 @@ const requiredFiles = [
   '.github/workflows/ci.yml',
   '.github/workflows/build-windows-exe.yml',
   '.github/workflows/release-windows.yml',
+  '.github/workflows/run-ultra-audit.yml',
   'examples/eventflow.ultra-audit.json',
   'examples/eventflow-public.ultra-audit.json',
   'examples/eventflow-full.ultra-audit.json'
@@ -49,6 +50,20 @@ const requiredExampleKeys = [
   'flagText',
   'budgets',
   'security'
+];
+
+const workflowFiles = [
+  '.github/workflows/ci.yml',
+  '.github/workflows/build-windows-exe.yml',
+  '.github/workflows/release-windows.yml',
+  '.github/workflows/run-ultra-audit.yml'
+];
+
+const blockedActionRefs = [
+  'actions/checkout@v4',
+  'actions/setup-node@v4',
+  'actions/upload-artifact@v4',
+  'softprops/action-gh-release@v2'
 ];
 
 const failures = [];
@@ -168,13 +183,25 @@ if (!ci.includes('npm run verify')) fail('CI should run npm run verify.');
 for (const workflow of ['.github/workflows/build-windows-exe.yml', '.github/workflows/release-windows.yml']) {
   const content = read(workflow);
   if (!content.includes('npm run check')) fail(`${workflow} should run npm run check.`);
+  if (!content.includes('npm run check:repo')) fail(`${workflow} should run npm run check:repo.`);
   if (!content.includes('npm run preflight')) fail(`${workflow} should run npm run preflight.`);
+}
+
+for (const workflow of workflowFiles) {
+  const content = read(workflow);
+  for (const blockedRef of blockedActionRefs) {
+    if (content.includes(blockedRef)) fail(`${workflow} still uses deprecated or warning-prone action reference: ${blockedRef}`);
+  }
 }
 
 const prTemplate = read('.github/pull_request_template.md');
 for (const requiredText of ['Pre-merge checklist', 'Testing notes', 'Follow-up work']) {
   if (!prTemplate.includes(requiredText)) fail(`Pull request template is missing: ${requiredText}`);
 }
+
+const dependabot = read('.github/dependabot.yml');
+if (!dependabot.includes('open-pull-requests-limit: 2')) fail('Dependabot should use a low PR limit to avoid noisy update bursts.');
+if (!dependabot.includes('version-update:semver-major')) fail('Dependabot should explicitly control major update noise.');
 
 if (!exists('package-lock.json')) {
   note('package-lock.json is not present yet. Keep using npm install until a clean lockfile is generated and committed.');
