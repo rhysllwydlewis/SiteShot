@@ -2,6 +2,51 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
+const failures = [];
+const notes = [];
+
+function filePath(file) {
+  return path.join(root, file);
+}
+
+function exists(file) {
+  return fs.existsSync(filePath(file));
+}
+
+function read(file) {
+  return fs.readFileSync(filePath(file), 'utf8');
+}
+
+function readJson(file) {
+  try {
+    return JSON.parse(read(file));
+  } catch (error) {
+    fail(`${file} is not valid JSON: ${error.message}`);
+    return null;
+  }
+}
+
+function fail(message) {
+  failures.push(message);
+}
+
+function note(message) {
+  notes.push(message);
+}
+
+function hasNsisTarget(targets) {
+  return Array.isArray(targets) && targets.some(target => {
+    if (typeof target === 'string') return target === 'nsis';
+    return target?.target === 'nsis';
+  });
+}
+
+function hasDirTarget(targets) {
+  return Array.isArray(targets) && targets.some(target => {
+    if (typeof target === 'string') return target === 'dir';
+    return target?.target === 'dir';
+  });
+}
 
 const requiredFiles = [
   'package.json',
@@ -28,85 +73,10 @@ const requiredFiles = [
   'examples/eventflow-full.ultra-audit.json',
   'scripts/config-smoke-check.mjs',
   'scripts/installer-smoke-check.mjs',
+  'scripts/preflight-check.mjs',
   'BUILD WINDOWS INSTALLER.bat',
   'src/lib/playwright-runtime.mjs'
 ];
-
-const requiredScripts = [
-  'check',
-  'preflight',
-  'verify',
-  'check:repo',
-  'check:config',
-  'check:installer',
-  'install:browsers:bundled',
-  'dist:installer',
-  'installer:win',
-  'audit:eventflow',
-  'audit:eventflow:public',
-  'audit:eventflow:full'
-];
-
-const requiredExampleKeys = [
-  'name',
-  'url',
-  'out',
-  'devices',
-  'pages',
-  'modules',
-  'reportStyle',
-  'capture',
-  'exclude',
-  'flagText',
-  'budgets',
-  'security'
-];
-
-const workflowFiles = [
-  '.github/workflows/ci.yml',
-  '.github/workflows/build-windows-exe.yml',
-  '.github/workflows/release-windows.yml',
-  '.github/workflows/run-ultra-audit.yml'
-];
-
-const blockedActionRefs = [
-  'actions/checkout@v4',
-  'actions/setup-node@v4',
-  'actions/upload-artifact@v4',
-  'softprops/action-gh-release@v2'
-];
-
-const failures = [];
-const notes = [];
-
-function filePath(file) {
-  return path.join(root, file);
-}
-
-function read(file) {
-  return fs.readFileSync(filePath(file), 'utf8');
-}
-
-function exists(file) {
-  return fs.existsSync(filePath(file));
-}
-
-function fail(message) {
-  failures.push(message);
-}
-
-function note(message) {
-  notes.push(message);
-}
-
-function readJson(file) {
-  try {
-    return JSON.parse(read(file));
-  } catch (error) {
-    fail(`${file} is not valid JSON: ${error.message}`);
-    return null;
-  }
-}
 
 for (const file of requiredFiles) {
   if (!exists(file)) fail(`Missing required file: ${file}`);
@@ -120,20 +90,66 @@ if (failures.length) {
 
 const pkg = readJson('package.json');
 const version = pkg?.version;
+const build = pkg?.build || {};
+const win = build.win || {};
+const nsis = build.nsis || {};
+const targets = win.target || [];
 
 if (!version) fail('package.json is missing a version.');
 if (pkg?.name !== 'siteshot-auditor-studio-ultra') fail('package.json name does not match the product package name.');
 
-for (const script of requiredScripts) {
+for (const script of [
+  'check',
+  'preflight',
+  'verify',
+  'check:repo',
+  'check:config',
+  'check:installer',
+  'install:browsers:bundled',
+  'dist:installer',
+  'installer:win',
+  'audit:eventflow',
+  'audit:eventflow:public',
+  'audit:eventflow:full'
+]) {
   if (!pkg?.scripts?.[script]) fail(`Missing npm script: ${script}`);
 }
 
 if (!pkg?.scripts?.verify?.includes('npm run check:config')) fail('verify should run config smoke checks.');
 if (!pkg?.scripts?.verify?.includes('npm run check:installer')) fail('verify should run installer smoke checks.');
+if (!pkg?.scripts?.verify?.includes('npm run preflight')) fail('verify should run preflight checks.');
 if (!pkg?.scripts?.['dist:installer']?.includes('install:browsers:bundled')) fail('dist:installer should bundle Playwright browsers before packaging.');
+if (!pkg?.scripts?.['dist:installer']?.includes('electron-builder --win nsis --x64')) fail('dist:installer should build the Windows NSIS x64 installer.');
 if (!pkg?.scripts?.['install:browsers:bundled']?.includes('PLAYWRIGHT_BROWSERS_PATH=0')) fail('install:browsers:bundled should use PLAYWRIGHT_BROWSERS_PATH=0.');
 if (!pkg?.devDependencies?.['cross-env']) fail('cross-env should be present for cross-platform bundled browser installation.');
-if (!pkg?.build?.files?.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Packaged app should include bundled Playwright browsers.');
+
+if (build.appId !== 'uk.siteshot.auditorstudio') fail('package.json build.appId should remain stable.');
+if (build.productName !== 'SiteShot Auditor Studio') fail('package.json build.productName should remain stable.');
+if (build.artifactName !== 'install.${ext}') fail('Windows installer artifact should be named install.exe.');
+if (build.directories?.output !== 'release') fail('Windows installer output should be the release folder.');
+if (build.asar !== false) fail('asar should stay disabled for packaged audit engine access.');
+if (!build.nsis) fail('NSIS config should be present for the Windows installer.');
+if (!hasNsisTarget(targets)) fail('Windows build should include the NSIS installer target.');
+if (hasDirTarget(targets)) fail('Windows build should not expose a separate dir target as a release package.');
+if (win.requestedExecutionLevel !== 'asInvoker') fail('Windows app should request asInvoker by default.');
+if (nsis.createDesktopShortcut !== 'always') fail('Installer should create a desktop shortcut.');
+if (nsis.createStartMenuShortcut !== true) fail('Installer should create a Start Menu shortcut.');
+if (nsis.shortcutName !== 'SiteShot Auditor Studio') fail('Installer shortcut name should match the product name.');
+if (nsis.runAfterFinish !== true) fail('Installer should offer to launch after install.');
+
+for (const packagedFile of [
+  'desktop/**/*',
+  'src/**/*',
+  'bin/**/*',
+  'docs/**/*',
+  'scripts/**/*',
+  'node_modules/playwright-core/.local-browsers/**/*',
+  'package.json',
+  'README.md',
+  'README FIRST - WINDOWS.txt'
+]) {
+  if (!pkg?.build?.files?.includes(packagedFile)) fail(`Packaged app should include: ${packagedFile}`);
+}
 
 const playwrightRuntime = read('src/lib/playwright-runtime.mjs');
 if (!playwrightRuntime.includes('configureBundledPlaywrightBrowsers')) fail('Playwright runtime helper should export configureBundledPlaywrightBrowsers.');
@@ -148,6 +164,7 @@ if (!doctorRunner.includes('getChromium')) fail('Doctor command should use the b
 
 const desktopMain = read('desktop/main.mjs');
 if (!desktopMain.includes('configureBundledPlaywrightBrowsers')) fail('Desktop runtime should configure bundled Playwright browser resolution before discovery imports Playwright.');
+if (!desktopMain.includes('ELECTRON_RUN_AS_NODE')) fail('Desktop runtime should use Node mode for packaged audit runner.');
 
 for (const docFile of ['README.md', 'README FIRST - WINDOWS.txt', 'CHANGELOG.md', 'SECURITY.md']) {
   const content = read(docFile);
@@ -155,7 +172,7 @@ for (const docFile of ['README.md', 'README FIRST - WINDOWS.txt', 'CHANGELOG.md'
 }
 
 const windowsGuide = read('README FIRST - WINDOWS.txt');
-for (const requiredText of ['Exact pages is the default', 'Auto starts discovery automatically', 'Sitemap starts discovery automatically']) {
+for (const requiredText of ['install.exe', 'Exact pages is the default', 'Auto starts discovery automatically', 'Sitemap starts discovery automatically']) {
   if (!windowsGuide.includes(requiredText)) fail(`Windows guide is missing current flow wording: ${requiredText}`);
 }
 
@@ -167,11 +184,13 @@ for (const requiredText of ['npm run verify', 'docs/TROUBLESHOOTING.md', 'SECURI
 const releaseDoc = read('docs/RELEASE.md');
 if (!releaseDoc.includes('package-lock.json')) fail('docs/RELEASE.md should document the package-lock follow-up.');
 if (!releaseDoc.includes('npm run verify')) fail('docs/RELEASE.md should refer to npm run verify.');
+if (!releaseDoc.includes('install.exe')) fail('docs/RELEASE.md should refer to install.exe.');
 
 const installerDoc = read('docs/INSTALLER.md');
-for (const requiredText of ['SiteShot-Auditor-Studio-Ultra-Setup', 'desktop shortcut', 'Start Menu', 'npm run dist:installer']) {
+for (const requiredText of ['install.exe', 'desktop shortcut', 'Start Menu', 'npm run dist:installer']) {
   if (!installerDoc.includes(requiredText)) fail(`docs/INSTALLER.md is missing installer guidance: ${requiredText}`);
 }
+if (installerDoc.includes('SiteShot-Auditor-Studio-Ultra-Setup')) fail('docs/INSTALLER.md should not reference the old versioned setup filename.');
 
 for (const example of [
   'examples/eventflow.ultra-audit.json',
@@ -181,7 +200,7 @@ for (const example of [
   const json = readJson(example);
   if (!json) continue;
 
-  for (const key of requiredExampleKeys) {
+  for (const key of ['name', 'url', 'out', 'devices', 'pages', 'modules', 'reportStyle', 'capture', 'exclude', 'flagText', 'budgets', 'security']) {
     if (!(key in json)) fail(`${example} is missing required key: ${key}`);
   }
 
@@ -205,9 +224,6 @@ if (publicExample && publicOnlyExample && fullExample) {
     if (publicOnlyExample.pages.includes(route)) fail(`Default EventFlow example should not include ${route}.`);
     if (!publicExample.exclude.includes(route)) fail(`Public EventFlow example should exclude ${route}.`);
     if (!publicOnlyExample.exclude.includes(route)) fail(`Default EventFlow example should exclude ${route}.`);
-  }
-
-  for (const route of privateRoutes) {
     if (!fullExample.pages.includes(route)) fail(`Full EventFlow example should include ${route}.`);
   }
 }
@@ -223,11 +239,13 @@ for (const workflow of ['.github/workflows/build-windows-exe.yml', '.github/work
   if (!content.includes('npm run check:installer')) fail(`${workflow} should run npm run check:installer.`);
   if (!content.includes('npm run preflight')) fail(`${workflow} should run npm run preflight.`);
   if (!content.includes('npm run dist:installer')) fail(`${workflow} should build the Windows installer.`);
+  if (!content.includes('release/install.exe')) fail(`${workflow} should use release/install.exe.`);
+  if (content.includes('Windows-Unpacked')) fail(`${workflow} should not publish an unpacked Windows artifact.`);
 }
 
-for (const workflow of workflowFiles) {
+for (const workflow of ['.github/workflows/ci.yml', '.github/workflows/build-windows-exe.yml', '.github/workflows/release-windows.yml', '.github/workflows/run-ultra-audit.yml']) {
   const content = read(workflow);
-  for (const blockedRef of blockedActionRefs) {
+  for (const blockedRef of ['actions/checkout@v4', 'actions/setup-node@v4', 'actions/upload-artifact@v4', 'softprops/action-gh-release@v2']) {
     if (content.includes(blockedRef)) fail(`${workflow} still uses deprecated or warning-prone action reference: ${blockedRef}`);
   }
 }
@@ -237,15 +255,14 @@ if (!configSmokeCheck.includes('CLI URL should win')) fail('Config smoke check s
 if (!configSmokeCheck.includes('Invalid maxPages should fall back')) fail('Config smoke check should cover numeric default handling.');
 
 const installerSmokeCheck = read('scripts/installer-smoke-check.mjs');
-if (!installerSmokeCheck.includes('createDesktopShortcut')) fail('Installer smoke check should verify desktop shortcut behaviour.');
-if (!installerSmokeCheck.includes('createStartMenuShortcut')) fail('Installer smoke check should verify Start Menu shortcut behaviour.');
-if (!installerSmokeCheck.includes('dist:installer')) fail('Installer smoke check should verify installer build scripts.');
-if (!installerSmokeCheck.includes('PLAYWRIGHT_BROWSERS_PATH=0')) fail('Installer smoke check should verify bundled Playwright browser install.');
-if (!installerSmokeCheck.includes('node_modules/playwright-core/.local-browsers/**/*')) fail('Installer smoke check should verify bundled browser files are packaged.');
+for (const requiredText of ['createDesktopShortcut', 'createStartMenuShortcut', 'dist:installer', 'PLAYWRIGHT_BROWSERS_PATH=0', 'node_modules/playwright-core/.local-browsers/**/*', 'install.${ext}', 'release/install.exe']) {
+  if (!installerSmokeCheck.includes(requiredText)) fail(`Installer smoke check should verify: ${requiredText}`);
+}
 
 const installerBatch = read('BUILD WINDOWS INSTALLER.bat');
 if (!installerBatch.includes('npm.cmd run verify')) fail('BUILD WINDOWS INSTALLER.bat should run full verification.');
 if (!installerBatch.includes('npm.cmd run dist:installer')) fail('BUILD WINDOWS INSTALLER.bat should build the setup installer.');
+if (!installerBatch.includes('release\\install.exe')) fail('BUILD WINDOWS INSTALLER.bat should expect release\\install.exe.');
 
 const prTemplate = read('.github/pull_request_template.md');
 for (const requiredText of ['Pre-merge checklist', 'Testing notes', 'Follow-up work']) {
