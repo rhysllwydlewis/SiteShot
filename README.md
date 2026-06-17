@@ -4,6 +4,18 @@ A professional website audit suite for real browser screenshots, responsive QA, 
 
 This is designed to move beyond a basic screenshot tool and become a real audit product.
 
+## Current version
+
+SiteShot Auditor Studio Ultra is currently on **v3.2.23**.
+
+This version confirms the simplified Target & Scope flow:
+
+- Exact pages is the default.
+- Auto starts discovery automatically when selected.
+- Sitemap starts discovery automatically when selected.
+- Auto/Sitemap show an animated working state while discovery is running.
+- Last Run uses the newest saved run and is actionable from both the topbar and sidebar.
+
 ## What it produces
 
 Every audit produces a complete evidence pack:
@@ -48,7 +60,13 @@ Extract the zip, then double-click:
 START SiteShot Auditor Studio.bat
 ```
 
-## Build Windows installer / EXE
+For the full Windows guide, read:
+
+```text
+README FIRST - WINDOWS.txt
+```
+
+## Build Windows app locally
 
 Double-click:
 
@@ -56,12 +74,35 @@ Double-click:
 BUILD WINDOWS EXE.bat
 ```
 
+This builds an unpacked Windows app and copies it to:
+
+```text
+%LOCALAPPDATA%\Programs\SiteShot Auditor Studio
+```
+
 ## Developer commands
 
 ```bash
 npm install
 npm run install:browsers
+npm run check
+npm run preflight
 npm run doctor
 npm run audit:eventflow
 npm run desktop
 ```
+
+## GitHub Actions
+
+The repository includes workflows for:
+
+- CI checks on push and pull request.
+- Manual Windows app builds.
+- Manual release packaging.
+- Manual EventFlow audit runs.
+
+## Example configs
+
+- `examples/eventflow-public.ultra-audit.json` audits public EventFlow pages only.
+- `examples/eventflow-full.ultra-audit.json` includes public pages plus auth/reset/verify routes.
+- `examples/eventflow.ultra-audit.json` is the default public EventFlow audit used by `npm run audit:eventflow`.
