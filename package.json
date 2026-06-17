@@ -34,7 +34,7 @@
     "docx": "^9.5.1"
   },
   "devDependencies": {
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.15.3",
     "electron": "^34.0.0"
   },
   "engines": {
