@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   release:
-    name: Build and publish release asset
+    name: Build and publish Windows installer
     runs-on: windows-latest
 
     steps:
@@ -37,22 +37,30 @@ jobs:
       - name: Run repo checks
         run: npm run check:repo
 
+      - name: Run config checks
+        run: npm run check:config
+
+      - name: Run installer checks
+        run: npm run check:installer
+
       - name: Run app preflight
         run: npm run preflight
 
-      - name: Build Windows app folder
-        run: npm run dist:win
+      - name: Build Windows installer
+        run: npm run dist:installer
 
-      - name: Create release zip
+      - name: Ensure release assets exist
         shell: pwsh
         run: |
-          $releaseRoot = "release"
-          $appPath = Join-Path $releaseRoot "win-unpacked"
-          $zipPath = Join-Path $releaseRoot "SiteShot-Auditor-Studio-Ultra-Windows.zip"
+          $installer = Get-ChildItem -Path release -Recurse -Filter '*Setup*.exe' | Select-Object -First 1
+          if (-not $installer) { throw "No Windows installer setup EXE was created" }
+          $appPath = Join-Path "release" "win-unpacked"
           if (-not (Test-Path $appPath)) { throw "Missing win-unpacked output" }
+          $zipPath = Join-Path "release" "SiteShot-Auditor-Studio-Ultra-Windows-Unpacked.zip"
           if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
           Compress-Archive -Path "$appPath\*" -DestinationPath $zipPath -Force
-          if (-not (Test-Path $zipPath)) { throw "Release zip was not created" }
+          if (-not (Test-Path $zipPath)) { throw "Unpacked release zip was not created" }
+          $installer | Format-Table FullName, Length
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
@@ -60,7 +68,13 @@ jobs:
           tag_name: ${{ github.event.inputs.tag_name }}
           name: SiteShot Auditor Studio Ultra ${{ github.event.inputs.tag_name }}
           body: |
-            SiteShot Auditor Studio Ultra Windows build.
+            SiteShot Auditor Studio Ultra Windows release.
 
-            This release runs syntax checks, repo checks and the app preflight before packaging.
-          files: release/SiteShot-Auditor-Studio-Ultra-Windows.zip
+            Recommended download: `SiteShot-Auditor-Studio-Ultra-Setup-*.exe`.
+
+            Run the installer, keep the desktop shortcut option selected, then launch SiteShot Auditor Studio from the desktop or Start Menu.
+
+            The unpacked zip is included as a fallback for advanced/manual use only.
+          files: |
+            release/*Setup*.exe
+            release/SiteShot-Auditor-Studio-Ultra-Windows-Unpacked.zip
