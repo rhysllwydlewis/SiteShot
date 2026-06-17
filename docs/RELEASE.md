@@ -1,22 +1,26 @@
 # Release process
 
-This project currently builds an unpacked Windows app using Electron Builder.
+This project builds a normal Windows installer for SiteShot Auditor Studio Ultra.
 
 ## Recommended release flow
 
 1. Merge all code changes into `main`.
 2. Run the CI workflow and confirm `npm run verify` passes.
-3. Run the Build Windows EXE workflow manually to confirm the Windows artifact builds.
-4. Download the Windows artifact and test it locally.
+3. Run the Build Windows EXE workflow manually to confirm the Windows installer artifact builds.
+4. Download `install.exe` and test it locally on Windows.
 5. Run the Release Windows Build workflow with a tag such as `v3.2.23`.
-6. Download the release zip and test it on Windows.
-7. Share the release once the app opens and an audit can be started.
+6. Download the release `install.exe` and test it on Windows.
+7. Share the release once the installer runs, the shortcuts are created, the app opens, and an audit can be started.
 
 ## Pre-release test
 
 Before treating a build as releasable, confirm:
 
-- the app opens correctly
+- `release/install.exe` is created
+- running `install.exe` installs SiteShot Auditor Studio
+- the desktop shortcut is created
+- the Start Menu shortcut is created
+- the app opens correctly from a shortcut
 - Exact Pages is the default scope
 - Auto starts discovery when selected
 - Sitemap starts discovery when selected
@@ -26,18 +30,28 @@ Before treating a build as releasable, confirm:
 
 ## Current packaging approach
 
-The current packaging route intentionally builds an unpacked Windows app folder rather than an NSIS installer. This avoids installer-stage issues and keeps the first public release path simple.
-
-Expected local output:
+The current packaging route intentionally builds an NSIS Windows installer as the main user-facing download. Normal users should receive one file:
 
 ```text
-release/win-unpacked/SiteShot Auditor Studio.exe
+install.exe
 ```
 
-Expected installed local copy after running the Windows build batch file:
+Expected local installer output:
+
+```text
+release/install.exe
+```
+
+Expected installed local copy after running the installer:
 
 ```text
 %LOCALAPPDATA%\Programs\SiteShot Auditor Studio\SiteShot Auditor Studio.exe
+```
+
+The unpacked app output remains available as a fallback/manual artifact only:
+
+```text
+release/win-unpacked/SiteShot Auditor Studio.exe
 ```
 
 ## Lockfile note
@@ -54,9 +68,9 @@ Then commit the generated `package-lock.json` in a follow-up PR.
 
 ## Future installer route
 
-Before moving from unpacked app output to a proper installer, add:
+Before distributing externally at scale, add:
 
 - a real application icon
-- a signed installer strategy if distributing externally
+- a signed installer strategy
 - a clean upgrade/update route
 - release notes per version
