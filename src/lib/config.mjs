@@ -5,6 +5,12 @@ export const DEFAULT_EXCLUDES = ['/api', '/assets', '/uploads', '/static', '/nod
 export const DEFAULT_FLAG_TEXT = ['Dashboard Log out', 'Mark all as read', 'Version: loading', 'lorem ipsum', 'TODO'];
 export const DEFAULT_MODULES = ['visual', 'functionality', 'seo', 'accessibility', 'performance', 'security', 'privacy', 'content', 'technical', 'auth', 'forms'];
 
+function splitCliOption(arg) {
+  const equalsAt = arg.indexOf('=');
+  if (equalsAt === -1) return [arg, undefined];
+  return [arg.slice(0, equalsAt), arg.slice(equalsAt + 1)];
+}
+
 export function parseArgs(argv) {
   const command = argv[0] && !argv[0].startsWith('--') ? argv[0] : 'audit';
   const raw = command === 'audit' ? argv.slice(argv[0] && !argv[0].startsWith('--') ? 1 : 0) : argv.slice(1);
@@ -48,7 +54,7 @@ export function parseArgs(argv) {
     if (arg === '--no-security') { args.modules = args.modules.split(',').filter(m => m !== 'security').join(','); continue; }
     if (arg === '--safe-security') { if (!args.modules.includes('security')) args.modules += ',security'; continue; }
 
-    const [key, inlineValue] = arg.startsWith('--') ? arg.split('=') : [null, null];
+    const [key, inlineValue] = arg.startsWith('--') ? splitCliOption(arg) : [null, null];
     if (!key) continue;
     const name = key.replace(/^--/, '');
     const value = inlineValue ?? raw[i + 1];
@@ -111,12 +117,17 @@ function positiveNumber(value, fallback) {
   return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
+function nonNegativeNumber(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : fallback;
+}
+
 export function normaliseArgs(args) {
   return {
     ...args,
     maxPages: positiveNumber(args.maxPages, 40),
-    depth: positiveNumber(args.depth, 2),
-    waitMs: Math.max(0, Number.isFinite(Number(args.waitMs)) ? Number(args.waitMs) : 1000),
+    depth: nonNegativeNumber(args.depth, 2),
+    waitMs: nonNegativeNumber(args.waitMs, 1000),
     includeList: splitList(args.include),
     excludeList: splitList(args.exclude),
     pageList: splitList(args.pages),
