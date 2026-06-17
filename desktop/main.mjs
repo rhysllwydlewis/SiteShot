@@ -4,10 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
+import { configureBundledPlaywrightBrowsers } from '../src/lib/playwright-runtime.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
+
+configureBundledPlaywrightBrowsers();
 
 let mainWindow;
 let activeProcess = null;
@@ -626,7 +629,7 @@ ipcMain.handle('choose-folder', async () => {
 
 ipcMain.handle('export-output-zip', async (_event, outDir) => {
   if (!outDir || !fs.existsSync(outDir)) return { ok: false, message: 'No completed output folder found.' };
-  const safeBase = outDir.replace(/[\\\/]+$/, '');
+  const safeBase = outDir.replace(/[\\/]+$/, '');
   if (process.platform === 'win32') {
     const ps = spawn('powershell.exe', [
       '-NoProfile',
