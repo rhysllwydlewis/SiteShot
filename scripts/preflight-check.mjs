@@ -37,6 +37,7 @@ const requiredFiles = [
   'src/lib/devices.mjs',
   'src/lib/crawler.mjs',
   'src/lib/capture.mjs',
+  'src/lib/playwright-runtime.mjs',
   'src/modules/security.mjs',
   'src/modules/accessibility.mjs',
   'src/modules/performance.mjs',
@@ -84,7 +85,7 @@ check(nsis.shortcutName === 'SiteShot Auditor Studio', 'installer shortcut name 
 check(nsis.runAfterFinish === true, 'installer can launch app after install');
 check(nsis.deleteAppDataOnUninstall === false, 'uninstall preserves user audit data by default');
 
-check(typeof scripts['install:browsers:bundled'] === 'string' && scripts['install:browsers:bundled'].includes('PLAYWRIGHT_BROWSERS_PATH=0'), 'bundled Playwright install script exists');
+check(typeof scripts['install:browsers:bundled'] === 'string' && scripts['install:browsers:bundled'].includes('PLAYWRIGHT_BROWSERS_PATH=playwright-browsers'), 'bundled Playwright install script targets playwright-browsers');
 check(typeof scripts['dist:installer'] === 'string' && scripts['dist:installer'].includes('install:browsers:bundled'), 'installer build bundles Playwright browser runtime');
 check(typeof scripts['dist:installer'] === 'string' && scripts['dist:installer'].includes('electron-builder --win nsis --x64'), 'installer build runs Electron Builder NSIS x64');
 check(typeof scripts.verify === 'string' && scripts.verify.includes('npm run preflight'), 'verify runs preflight');
@@ -96,13 +97,16 @@ for (const packagedFile of [
   'bin/**/*',
   'docs/**/*',
   'scripts/**/*',
-  'node_modules/playwright-core/.local-browsers/**/*',
   'package.json',
   'README.md',
   'README FIRST - WINDOWS.txt'
 ]) {
   check(packagedFiles.includes(packagedFile), `packaged file rule: ${packagedFile}`);
 }
+check(!packagedFiles.includes('node_modules/playwright-core/.local-browsers/**/*'), 'browser runtime is not packaged from node_modules local-browsers');
+
+const extraResources = Array.isArray(build.extraResources) ? build.extraResources : [];
+check(extraResources.some(resource => resource?.from === 'playwright-browsers' && resource?.to === 'playwright-browsers'), 'playwright-browsers packaged as extraResources');
 
 const main = read('desktop/main.mjs');
 const preload = read('desktop/preload.cjs');
@@ -111,10 +115,14 @@ const audit = read('src/audit.mjs');
 const crawler = read('src/lib/crawler.mjs');
 const capture = read('src/lib/capture.mjs');
 const reports = read('src/reporting/reports.mjs');
+const runtime = read('src/lib/playwright-runtime.mjs');
 const buildWorkflow = read('.github/workflows/build-windows-exe.yml');
 const releaseWorkflow = read('.github/workflows/release-windows.yml');
 const installerBatch = read('BUILD WINDOWS INSTALLER.bat');
 
+check(runtime.includes('resourcesBrowserPath'), 'runtime checks Electron resources browser path');
+check(runtime.includes('playwright-browsers'), 'runtime uses playwright-browsers folder');
+check(runtime.includes('hasChromiumBrowser'), 'runtime verifies Chromium exists before using path');
 check(main.includes('ELECTRON_RUN_AS_NODE'), 'packaged EXE uses Node mode for audit runner');
 check(main.includes('discover-pages'), 'main handles page discovery');
 check(main.includes('open-help-docs'), 'main handles help docs');
@@ -155,26 +163,7 @@ if (scriptMatch) {
   check(false, 'browser script block exists');
 }
 
-for (const id of [
-  'run',
-  'stop',
-  'choose',
-  'openReport',
-  'openQuick',
-  'openFull',
-  'openFolder',
-  'exportZip',
-  'url',
-  'out',
-  'pages',
-  'permission',
-  'versionPill',
-  'topVersion',
-  'settingsVersion',
-  'discoveryPanel',
-  'discoveryList',
-  'scopeHelp'
-]) {
+for (const id of ['run', 'stop', 'choose', 'openReport', 'openQuick', 'openFull', 'openFolder', 'exportZip', 'url', 'out', 'pages', 'permission', 'versionPill', 'topVersion', 'settingsVersion', 'discoveryPanel', 'discoveryList', 'scopeHelp']) {
   check(html.includes(`id="${id}"`), `UI id ${id}`);
 }
 
