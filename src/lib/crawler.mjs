@@ -280,7 +280,11 @@ async function fetchText(request, url, timeout = 12000) {
     const body = await response.body();
     const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
     if (/\.gz(?:$|[?#])/i.test(url)) {
-      return gunzipSync(buffer).toString('utf8');
+      try {
+        return gunzipSync(buffer).toString('utf8');
+      } catch {
+        return buffer.toString('utf8');
+      }
     }
     return buffer.toString('utf8');
   } catch {
