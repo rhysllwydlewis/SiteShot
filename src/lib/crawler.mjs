@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib';
 import { normalisePageUrl, shouldSkipUrl, canonicaliseAuditUrl, withTrailingSlash, cleanQueryForAudit } from './utils.mjs';
 
 const IMPORTANT_PATH_PATTERNS = [
@@ -276,7 +277,12 @@ async function fetchText(request, url, timeout = 12000) {
   try {
     const response = await request.get(url, { timeout });
     if (!response.ok()) return null;
-    return await response.text();
+    const body = await response.body();
+    const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
+    if (/\.gz(?:$|[?#])/i.test(url)) {
+      return gunzipSync(buffer).toString('utf8');
+    }
+    return buffer.toString('utf8');
   } catch {
     return null;
   }
@@ -295,6 +301,9 @@ async function sitemapUrlsFromRobots(request, baseUrl) {
     .map(line => line.trim())
     .filter(line => /^sitemap\s*:/i.test(line))
     .map(line => line.replace(/^sitemap\s*:/i, '').trim())
+    .map(value => {
+      try { return new URL(value, base.origin).href; } catch { return ''; }
+    })
     .filter(Boolean);
 }
 
