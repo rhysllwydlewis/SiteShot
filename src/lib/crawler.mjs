@@ -1,4 +1,30 @@
+import { gunzipSync } from 'node:zlib';
 import { normalisePageUrl, shouldSkipUrl, canonicaliseAuditUrl, withTrailingSlash, cleanQueryForAudit } from './utils.mjs';
+
+const IMPORTANT_PATH_PATTERNS = [
+  /^\/$/,
+  /\/contact\/?$/i,
+  /\/about\/?$/i,
+  /\/services?\/?$/i,
+  /\/pricing\/?$/i,
+  /\/faq\/?$/i,
+  /\/guides?\/?$/i,
+  /\/blog\/?$/i,
+  /\/privacy\/?$/i,
+  /\/terms\/?$/i
+];
+
+const LOW_VALUE_PATH_PATTERNS = [
+  /\/tag\//i,
+  /\/category\//i,
+  /\/author\//i,
+  /\/page\/\d+/i,
+  /\/wp-json/i,
+  /\/feed\/?$/i,
+  /\/cart\/?$/i,
+  /\/checkout\/?$/i,
+  /\/account\/?$/i
+];
 
 export async function waitForPage(page, waitMs) {
   await page.waitForLoadState('domcontentloaded', { timeout: 45000 }).catch(() => {});
@@ -17,17 +43,59 @@ async function looksLikeNotFoundPage(page) {
   }
 }
 
-function discoveryCandidate(url, source, depth = 0) {
-  return { url: canonicaliseAuditUrl(cleanQueryForAudit(url)), source, depth };
+function decodeXmlText(value) {
+  return String(value || '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
 }
 
-function uniqueCandidates(candidates) {
+function discoveryCandidate(url, source, depth = 0, meta = {}) {
+  return { url: canonicaliseAuditUrl(cleanQueryForAudit(url)), source, depth, ...meta };
+}
+
+function mergeSources(a = '', b = '') {
+  return [...new Set([...String(a).split('+'), ...String(b).split('+')].map(s => s.trim()).filter(Boolean))].join('+');
+}
+
+function candidateScore(item, baseUrl) {
+  let score = 0;
+  try {
+    const url = new URL(item.url, baseUrl);
+    const path = url.pathname || '/';
+    score += (Number(item.depth) || 0) * 18;
+    if (String(item.source || '').includes('sitemap')) score -= 18;
+    if (String(item.source || '').includes('homepage')) score -= 8;
+    if (IMPORTANT_PATH_PATTERNS.some(pattern => pattern.test(path))) score -= 16;
+    if (LOW_VALUE_PATH_PATTERNS.some(pattern => pattern.test(path))) score += 35;
+    if (url.search) score += 8;
+    score += Math.min(path.split('/').filter(Boolean).length * 2, 14);
+  } catch {
+    score += 99;
+  }
+  return score;
+}
+
+function uniqueCandidates(candidates, baseUrl = '') {
   const seen = new Map();
   for (const item of candidates) {
     if (!item?.url) continue;
-    if (!seen.has(item.url)) seen.set(item.url, item);
+    if (!seen.has(item.url)) {
+      seen.set(item.url, item);
+      continue;
+    }
+    const existing = seen.get(item.url);
+    seen.set(item.url, {
+      ...existing,
+      source: mergeSources(existing.source, item.source),
+      depth: Math.min(Number(existing.depth) || 0, Number(item.depth) || 0)
+    });
   }
-  return [...seen.values()];
+  const list = [...seen.values()];
+  return baseUrl ? list.sort((a, b) => candidateScore(a, baseUrl) - candidateScore(b, baseUrl)) : list;
 }
 
 async function tryRoute(page, url) {
@@ -86,6 +154,31 @@ async function validateCandidate(browser, options, candidate) {
   } finally {
     await page.close().catch(() => {});
   }
+}
+
+async function validateCandidates(browser, options, candidates) {
+  const included = [];
+  const rejected = [];
+  const seenIncluded = new Set();
+  const queue = [...candidates];
+  const workers = Math.min(3, Math.max(1, queue.length));
+
+  async function worker() {
+    while (queue.length && included.length < options.maxPages) {
+      const candidate = queue.shift();
+      if (!candidate) continue;
+      const result = await validateCandidate(browser, options, candidate);
+      if (result.included && !seenIncluded.has(result.url) && included.length < options.maxPages) {
+        included.push(result);
+        seenIncluded.add(result.url);
+      } else if (!result.included) {
+        rejected.push(result);
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: workers }, worker));
+  return { included: uniqueCandidates(included, options.url).slice(0, options.maxPages), rejected };
 }
 
 async function resolveExplicitPage(browser, options, rawPage) {
@@ -152,14 +245,16 @@ export async function collectLinks(page, baseUrl, includeList, excludeList) {
     };
 
     document.querySelectorAll('a[href],area[href]').forEach(el => push(el.getAttribute('href') || el.href));
+    document.querySelectorAll('link[rel~="canonical"][href],link[rel~="alternate"][href],meta[property="og:url"][content]').forEach(el => push(el.getAttribute('href') || el.getAttribute('content')));
+    document.querySelectorAll('form[action]').forEach(el => push(el.getAttribute('action')));
     document.querySelectorAll('[data-href],[data-url],[data-link],[data-to],[to],[href]').forEach(el => {
       for (const attr of ['data-href','data-url','data-link','data-to','to','href']) push(el.getAttribute(attr));
     });
 
-    for (const script of [...document.scripts].slice(0, 30)) {
+    for (const script of [...document.scripts].slice(0, 40)) {
       const text = script.textContent || '';
-      const matches = text.match(/https?:\/\/[^"'\\\s<>]+|\/[A-Za-z0-9][^"'\\\s<>]{1,160}/g) || [];
-      for (const match of matches.slice(0, 200)) push(match);
+      const matches = text.match(/https?:\/\/[^"'\\\s<>]+|\/[A-Za-z0-9][^"'\\\s<>]{1,180}/g) || [];
+      for (const match of matches.slice(0, 250)) push(match);
     }
 
     return [...found];
@@ -182,14 +277,23 @@ async function fetchText(request, url, timeout = 12000) {
   try {
     const response = await request.get(url, { timeout });
     if (!response.ok()) return null;
-    return await response.text();
+    const body = await response.body();
+    const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
+    if (/\.gz(?:$|[?#])/i.test(url)) {
+      try {
+        return gunzipSync(buffer).toString('utf8');
+      } catch {
+        return buffer.toString('utf8');
+      }
+    }
+    return buffer.toString('utf8');
   } catch {
     return null;
   }
 }
 
 function locsFromXml(xml) {
-  return [...String(xml || '').matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map(m => m[1].trim()).filter(Boolean);
+  return [...String(xml || '').matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map(m => decodeXmlText(m[1])).filter(Boolean);
 }
 
 async function sitemapUrlsFromRobots(request, baseUrl) {
@@ -201,48 +305,72 @@ async function sitemapUrlsFromRobots(request, baseUrl) {
     .map(line => line.trim())
     .filter(line => /^sitemap\s*:/i.test(line))
     .map(line => line.replace(/^sitemap\s*:/i, '').trim())
+    .map(value => {
+      try { return new URL(value, base.origin).href; } catch { return ''; }
+    })
     .filter(Boolean);
 }
 
-async function collectSitemapCandidates(request, baseUrl, options, maxSitemaps = 20) {
+async function collectSitemapCandidates(request, baseUrl, options, maxSitemaps = 35) {
   const base = new URL(baseUrl);
   const discoveredSitemaps = [
     `${base.origin}/sitemap.xml`,
     `${base.origin}/sitemap_index.xml`,
+    `${base.origin}/sitemap-index.xml`,
+    `${base.origin}/sitemap/sitemap.xml`,
+    `${base.origin}/wp-sitemap.xml`,
     ...(await sitemapUrlsFromRobots(request, baseUrl))
   ];
 
   const queue = [...new Set(discoveredSitemaps)];
   const visited = new Set();
   const candidates = [];
+  const diagnostics = {
+    sitemapsTried: [],
+    sitemapsWithLocs: [],
+    nestedSitemaps: [],
+    urlsFound: 0,
+    urlsRejected: 0
+  };
 
-  while (queue.length && visited.size < maxSitemaps && candidates.length < options.maxPages * 3) {
+  while (queue.length && visited.size < maxSitemaps && candidates.length < options.maxPages * 5) {
     const sitemapUrl = queue.shift();
     if (!sitemapUrl || visited.has(sitemapUrl)) continue;
     visited.add(sitemapUrl);
+    diagnostics.sitemapsTried.push(sitemapUrl);
 
     const xml = await fetchText(request, sitemapUrl);
     if (!xml) continue;
 
     const locs = locsFromXml(xml);
+    if (locs.length) diagnostics.sitemapsWithLocs.push({ url: sitemapUrl, locs: locs.length });
+
     for (const loc of locs) {
       try {
-        const locUrl = new URL(loc);
+        const locUrl = new URL(loc, base.origin);
         const path = locUrl.pathname.toLowerCase();
-        if (path.endsWith('.xml') && locUrl.origin === base.origin) {
-          if (!visited.has(locUrl.href)) queue.push(locUrl.href);
+        if ((path.endsWith('.xml') || path.endsWith('.xml.gz')) && locUrl.origin === base.origin) {
+          if (!visited.has(locUrl.href) && !queue.includes(locUrl.href)) {
+            queue.push(locUrl.href);
+            diagnostics.nestedSitemaps.push(locUrl.href);
+          }
           continue;
         }
 
         const clean = cleanQueryForAudit(locUrl.href);
         if (!shouldSkipUrl(clean, base.origin, options.includeList, options.excludeList)) {
+          diagnostics.urlsFound += 1;
           candidates.push(discoveryCandidate(clean, `sitemap:${new URL(sitemapUrl).pathname}`, 0));
+        } else {
+          diagnostics.urlsRejected += 1;
         }
-      } catch {}
+      } catch {
+        diagnostics.urlsRejected += 1;
+      }
     }
   }
 
-  return uniqueCandidates(candidates);
+  return { candidates: uniqueCandidates(candidates, baseUrl), diagnostics };
 }
 
 async function crawlCandidates(browser, options, startUrls = []) {
@@ -250,11 +378,13 @@ async function crawlCandidates(browser, options, startUrls = []) {
   const seed = startUrls.length ? startUrls : [target.href];
   const discovered = new Map();
   const queue = seed.map(url => ({ url: canonicaliseAuditUrl(url), depth: 0 }));
+  const diagnostics = { pagesCrawled: 0, linksFound: 0, failed: [] };
+
   for (const item of queue) discovered.set(item.url, discoveryCandidate(item.url, 'crawl-seed', 0));
 
   const crawlPage = await browser.newPage();
 
-  while (queue.length && discovered.size <= options.maxPages * 3) {
+  while (queue.length && discovered.size <= options.maxPages * 5) {
     const current = queue.shift();
     if (!current || current.depth > options.depth) continue;
     try {
@@ -263,72 +393,81 @@ async function crawlCandidates(browser, options, startUrls = []) {
       await waitForPage(crawlPage, 400);
       await revealNavigationControls(crawlPage);
       const links = await collectLinks(crawlPage, options.url, options.includeList, options.excludeList);
+      diagnostics.pagesCrawled += 1;
+      diagnostics.linksFound += links.length;
       for (const link of links) {
-        if (discovered.size >= options.maxPages * 3) break;
+        if (discovered.size >= options.maxPages * 5) break;
         if (!discovered.has(link)) {
           discovered.set(link, discoveryCandidate(link, current.depth === 0 ? 'homepage-link' : 'crawl-link', current.depth + 1));
           queue.push({ url: link, depth: current.depth + 1 });
         }
       }
     } catch (error) {
+      diagnostics.failed.push({ url: current.url, reason: error.message });
       console.warn(`Could not crawl ${current.url}: ${error.message}`);
     }
   }
 
   await crawlPage.close().catch(() => {});
-  return [...discovered.values()];
+  return { candidates: uniqueCandidates([...discovered.values()], options.url), diagnostics };
 }
 
 export async function discoverPageCandidates(browser, options) {
   const mode = options.scopeMode || (options.pageList?.length ? 'exact' : 'crawl');
   const rejected = [];
   let candidates = [];
+  const diagnostics = { mode, sitemap: null, crawl: null };
 
   if (mode === 'exact' && options.pageList.length) {
     candidates = options.pageList.map(page => discoveryCandidate(page, 'manual', 0));
   } else if (mode === 'sitemap') {
     const page = await browser.newPage();
-    candidates = await collectSitemapCandidates(page.request, options.url, options);
-    await page.close().catch(() => {});
+    try {
+      const sitemap = await collectSitemapCandidates(page.request, options.url, options);
+      diagnostics.sitemap = sitemap.diagnostics;
+      candidates = sitemap.candidates;
+    } finally {
+      await page.close().catch(() => {});
+    }
     if (!candidates.length) {
       rejected.push({ url: `${new URL(options.url).origin}/sitemap.xml`, source: 'sitemap', included: false, status: 0, reason: 'No sitemap URLs found' });
     }
   } else if (mode === 'auto') {
     const page = await browser.newPage();
-    const sitemap = await collectSitemapCandidates(page.request, options.url, options);
-    await page.close().catch(() => {});
-    const crawl = await crawlCandidates(browser, options, [options.url]);
-    candidates = uniqueCandidates([...sitemap, ...crawl]);
+    let sitemap;
+    try {
+      sitemap = await collectSitemapCandidates(page.request, options.url, options);
+      diagnostics.sitemap = sitemap.diagnostics;
+    } finally {
+      await page.close().catch(() => {});
+    }
+    const sitemapSeeds = sitemap.candidates.slice(0, 8).map(item => item.url);
+    const crawl = await crawlCandidates(browser, options, [options.url, ...sitemapSeeds]);
+    diagnostics.crawl = crawl.diagnostics;
+    candidates = uniqueCandidates([...sitemap.candidates, ...crawl.candidates], options.url);
   } else {
-    candidates = await crawlCandidates(browser, options, [options.url]);
+    const crawl = await crawlCandidates(browser, options, [options.url]);
+    diagnostics.crawl = crawl.diagnostics;
+    candidates = crawl.candidates;
   }
 
-  candidates = uniqueCandidates(candidates).slice(0, Math.max(options.maxPages * 2, options.maxPages));
-  const included = [];
-  const seenIncluded = new Set();
+  candidates = uniqueCandidates(candidates, options.url).slice(0, Math.max(options.maxPages * 3, options.maxPages));
 
   console.log(`Validating ${candidates.length} discovered page candidate(s)...`);
 
-  for (const candidate of candidates) {
-    if (included.length >= options.maxPages) break;
-    const result = await validateCandidate(browser, options, candidate);
-    if (result.included && !seenIncluded.has(result.url)) {
-      included.push(result);
-      seenIncluded.add(result.url);
-    } else if (!result.included) {
-      rejected.push(result);
-    }
-  }
+  const validation = await validateCandidates(browser, options, candidates);
+  rejected.push(...validation.rejected);
 
   return {
     mode,
-    included,
+    included: validation.included,
     rejected,
+    diagnostics,
     summary: {
       candidates: candidates.length,
-      included: included.length,
+      included: validation.included.length,
       rejected: rejected.length,
-      sources: [...new Set([...included, ...rejected].map(item => item.source).filter(Boolean))]
+      sources: [...new Set([...validation.included, ...rejected].map(item => item.source).filter(Boolean))]
     }
   };
 }
