@@ -52,15 +52,15 @@ jobs:
       - name: Ensure release assets exist
         shell: pwsh
         run: |
-          $installer = Get-ChildItem -Path release -Recurse -Filter '*Setup*.exe' | Select-Object -First 1
-          if (-not $installer) { throw "No Windows installer setup EXE was created" }
+          $installer = Join-Path "release" "install.exe"
+          if (-not (Test-Path $installer)) { throw "No Windows install.exe was created" }
           $appPath = Join-Path "release" "win-unpacked"
           if (-not (Test-Path $appPath)) { throw "Missing win-unpacked output" }
           $zipPath = Join-Path "release" "SiteShot-Auditor-Studio-Ultra-Windows-Unpacked.zip"
           if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
           Compress-Archive -Path "$appPath\*" -DestinationPath $zipPath -Force
           if (-not (Test-Path $zipPath)) { throw "Unpacked release zip was not created" }
-          $installer | Format-Table FullName, Length
+          Get-Item $installer | Format-Table FullName, Length
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
@@ -70,11 +70,11 @@ jobs:
           body: |
             SiteShot Auditor Studio Ultra Windows release.
 
-            Recommended download: `SiteShot-Auditor-Studio-Ultra-Setup-*.exe`.
+            Recommended download: `install.exe`.
 
-            Run the installer, keep the desktop shortcut option selected, then launch SiteShot Auditor Studio from the desktop or Start Menu.
+            Run install.exe, keep the desktop shortcut option selected, then launch SiteShot Auditor Studio from the desktop or Start Menu.
 
             The unpacked zip is included as a fallback for advanced/manual use only.
           files: |
-            release/*Setup*.exe
+            release/install.exe
             release/SiteShot-Auditor-Studio-Ultra-Windows-Unpacked.zip
