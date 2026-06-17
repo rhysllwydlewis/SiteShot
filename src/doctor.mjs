@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { chromium } from 'playwright';
+import { getChromium } from './lib/playwright-runtime.mjs';
 
 export async function runDoctor() {
   console.log('SiteShot Auditor Studio Ultra Doctor');
   console.log('Node:', process.version);
   try {
+    const chromium = await getChromium();
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     await page.setContent('<h1>Playwright OK</h1>');
@@ -15,7 +16,7 @@ export async function runDoctor() {
   } catch (error) {
     console.error('Chromium launch failed.');
     console.error(error.message);
-    console.error('Try: npm.cmd run install:browsers');
+    console.error('Try: npm.cmd run install:browsers:bundled');
     process.exitCode = 1;
   }
 }
