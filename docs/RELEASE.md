@@ -6,7 +6,7 @@ This project builds a normal Windows installer for SiteShot Auditor Studio Ultra
 
 1. Merge all code changes into `main`.
 2. Run the CI workflow and confirm `npm run verify` passes.
-3. Run the Build Windows EXE workflow manually to confirm the Windows installer artifact builds.
+3. Run the Build Windows Installer workflow manually to confirm the Windows installer artifact builds.
 4. Download `install.exe` and test it locally on Windows.
 5. Run the Release Windows Build workflow with a tag such as `v3.2.23`.
 6. Download the release `install.exe` and test it on Windows.
