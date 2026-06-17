@@ -10,16 +10,29 @@ on:
 
 jobs:
   audit:
+    name: Run public SiteShot audit
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npx playwright install --with-deps chromium
-      - run: node bin/siteshot.mjs audit --config examples/eventflow.ultra-audit.json --url "${{ github.event.inputs.target_url }}"
-      - uses: actions/upload-artifact@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run public EventFlow audit
+        run: node bin/siteshot.mjs audit --config examples/eventflow-public.ultra-audit.json --url "${{ github.event.inputs.target_url }}"
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
         with:
-          name: siteshot-ultra-audit-report
-          path: audit/eventflow-ultra
+          name: siteshot-ultra-audit-public
+          path: audit

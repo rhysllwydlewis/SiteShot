@@ -13,6 +13,8 @@
     "desktop": "electron .",
     "audit": "node bin/siteshot.mjs audit",
     "audit:eventflow": "node bin/siteshot.mjs audit --config examples/eventflow.ultra-audit.json",
+    "audit:eventflow:public": "node bin/siteshot.mjs audit --config examples/eventflow-public.ultra-audit.json",
+    "audit:eventflow:full": "node bin/siteshot.mjs audit --config examples/eventflow-full.ultra-audit.json",
     "doctor": "node bin/siteshot.mjs doctor",
     "init": "node bin/siteshot.mjs init",
     "compare": "node bin/siteshot.mjs compare",

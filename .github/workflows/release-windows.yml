@@ -1,0 +1,63 @@
+name: Release Windows Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag, for example v3.2.23"
+        required: true
+        default: "v3.2.23"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release asset
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npm run install:browsers
+
+      - name: Run syntax checks
+        run: npm run check
+
+      - name: Run app preflight
+        run: npm run preflight
+
+      - name: Build Windows app folder
+        run: npm run dist:win
+
+      - name: Create release zip
+        shell: pwsh
+        run: |
+          $releaseRoot = "release"
+          $appPath = Join-Path $releaseRoot "win-unpacked"
+          $zipPath = Join-Path $releaseRoot "SiteShot-Auditor-Studio-Ultra-Windows.zip"
+          if (-not (Test-Path $appPath)) { throw "Missing win-unpacked output" }
+          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+          Compress-Archive -Path "$appPath\*" -DestinationPath $zipPath -Force
+          if (-not (Test-Path $zipPath)) { throw "Release zip was not created" }
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name }}
+          name: SiteShot Auditor Studio Ultra ${{ github.event.inputs.tag_name }}
+          body: |
+            SiteShot Auditor Studio Ultra Windows build.
+
+            This release runs syntax checks and the app preflight before packaging.
+          files: release/SiteShot-Auditor-Studio-Ultra-Windows.zip
