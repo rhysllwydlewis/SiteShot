@@ -25,7 +25,7 @@ Safe checks include:
 
 ## Reporting a security concern
 
-If you find a security concern in SiteShot itself, open a private note to the maintainer rather than publishing exploit details publicly.
+If you find a security concern in SiteShot itself, avoid posting sensitive exploit details publicly. Contact the maintainer privately where a private contact route is available. If no private contact route is available, open a minimal GitHub issue that describes the affected area without sharing exploit detail, credentials, secrets or sensitive logs.
 
 When reporting, include:
 
@@ -34,7 +34,7 @@ When reporting, include:
 - reproduction steps
 - expected behaviour
 - actual behaviour
-- screenshots or logs where useful
+- screenshots or logs where useful, with secrets removed
 
 ## Out of scope
 
