@@ -8,10 +8,10 @@ echo ============================================================
 echo  Building SiteShot Auditor Studio Ultra Windows Installer
 echo ============================================================
 echo.
-echo This creates the proper setup EXE for normal users.
+echo This creates one normal-user setup file: install.exe
 echo.
 echo Expected output:
-echo release\SiteShot-Auditor-Studio-Ultra-Setup-3.2.23-x64.exe
+echo release\install.exe
 echo.
 
 if not exist "package.json" (
@@ -68,13 +68,13 @@ if %errorlevel% neq 0 (
 )
 
 set "FOUND_INSTALLER="
-for %%F in ("release\*Setup*.exe") do set "FOUND_INSTALLER=%%~fF"
+if exist "release\install.exe" set "FOUND_INSTALLER=%~dp0release\install.exe"
 
 if "%FOUND_INSTALLER%"=="" (
   echo.
-  echo ERROR: Build completed but the setup installer was not found.
-  echo Expected a file like:
-  echo release\SiteShot-Auditor-Studio-Ultra-Setup-3.2.23-x64.exe
+  echo ERROR: Build completed but install.exe was not found.
+  echo Expected:
+  echo release\install.exe
   pause
   exit /b 1
 )
@@ -90,7 +90,10 @@ echo.
 echo Opening release folder now...
 start "" "%~dp0release"
 echo.
-echo Users can now run the setup EXE and launch SiteShot from the
+echo Give users this one file:
+echo release\install.exe
+echo.
+echo Users can run install.exe and launch SiteShot from the
 echo desktop shortcut or Windows Start Menu.
 echo.
 pause
