@@ -16,6 +16,34 @@ import { runTechnicalModule } from '../modules/technical.mjs';
 import { runAuthModule } from '../modules/auth.mjs';
 import { runFormsModule } from '../modules/forms.mjs';
 
+const MAX_NETWORK_LOG_ENTRIES = 750;
+
+function pushNetworkEntry(networkLog, entry) {
+  if (networkLog.length < MAX_NETWORK_LOG_ENTRIES) networkLog.push(entry);
+}
+
+async function runModuleSafely(result, moduleName, category, targetUrl, runner) {
+  try {
+    const mod = await runner();
+    result.moduleData[moduleName] = mod.data;
+    result.issues.push(...(mod.issues || []));
+  } catch (error) {
+    const message = error?.message || String(error);
+    result.moduleData[moduleName] = { error: message };
+    result.errors.push(`${moduleName}: ${message}`.slice(0, 500));
+    result.issues.push(makeIssue({
+      module: moduleName,
+      category,
+      severity: 'Medium',
+      title: `${category} module failed to complete`,
+      description: `The ${category} audit module failed before it could complete. Other modules continued running for this page/device.`,
+      url: targetUrl,
+      evidence: message,
+      recommendation: 'Review the captured page behaviour and rerun the audit. If the issue repeats, inspect the module error and page console output.'
+    }));
+  }
+}
+
 async function looksLikeCapturedNotFound(page, status) {
   if (status >= 400) return true;
   try {
@@ -65,10 +93,10 @@ export async function capturePageForDevice(browser, targetUrl, device, outDir, o
 
   page.on('response', async response => {
     const req = response.request();
-    networkLog.push({ url: response.url(), status: response.status(), method: req.method(), resourceType: req.resourceType(), failed: false });
+    pushNetworkEntry(networkLog, { url: response.url(), status: response.status(), method: req.method(), resourceType: req.resourceType(), failed: false });
   });
   page.on('requestfailed', request => {
-    networkLog.push({ url: request.url(), status: 0, method: request.method(), resourceType: request.resourceType(), failed: true, failure: request.failure()?.errorText || '' });
+    pushNetworkEntry(networkLog, { url: request.url(), status: 0, method: request.method(), resourceType: request.resourceType(), failed: true, failure: request.failure()?.errorText || '' });
   });
   page.on('console', msg => {
     if (['error', 'warning'].includes(msg.type())) errors.push(`${msg.type()}: ${msg.text()}`.slice(0, 500));
@@ -152,57 +180,24 @@ export async function capturePageForDevice(browser, targetUrl, device, outDir, o
     const moduleList = options.moduleList || [];
     const ctx = { ...options, baseUrl: options.baseUrl || targetUrl };
 
-    if (moduleList.includes('visual')) {
-      const mod = await runVisualModule(page, targetUrl, { flagText: options.flagText, budgets: options.budgets }, initialFile);
-      result.moduleData.visual = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('seo')) {
-      const mod = await runSeoModule(page, targetUrl);
-      result.moduleData.seo = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('accessibility')) {
-      const mod = await runAccessibilityModule(page, targetUrl);
-      result.moduleData.accessibility = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('functionality')) {
-      const mod = await runFunctionalityModule(page, targetUrl, networkLog, ctx);
-      result.moduleData.functionality = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('performance')) {
-      const mod = await runPerformanceModule(page, targetUrl, networkLog, options.budgets || {});
-      result.moduleData.performance = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('security')) {
-      const mod = await runSecurityModule(page, ctx, targetUrl, response, context);
-      result.moduleData.security = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('privacy')) {
-      const mod = await runPrivacyModule(page, targetUrl);
-      result.moduleData.privacy = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('content')) {
-      const mod = await runContentModule(page, targetUrl);
-      result.moduleData.content = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('auth')) {
-      const mod = await runAuthModule(page, targetUrl);
-      result.moduleData.auth = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('forms')) {
-      const mod = await runFormsModule(page, targetUrl);
-      result.moduleData.forms = mod.data; result.issues.push(...mod.issues);
-    }
-    if (moduleList.includes('technical')) {
-      const mod = await runTechnicalModule(page, targetUrl, errors, networkLog, options.budgets || {});
-      result.moduleData.technical = mod.data; result.issues.push(...mod.issues);
-    }
+    if (moduleList.includes('visual')) await runModuleSafely(result, 'visual', 'Visual', targetUrl, () => runVisualModule(page, targetUrl, { flagText: options.flagText, budgets: options.budgets }, initialFile));
+    if (moduleList.includes('seo')) await runModuleSafely(result, 'seo', 'SEO', targetUrl, () => runSeoModule(page, targetUrl));
+    if (moduleList.includes('accessibility')) await runModuleSafely(result, 'accessibility', 'Accessibility', targetUrl, () => runAccessibilityModule(page, targetUrl));
+    if (moduleList.includes('functionality')) await runModuleSafely(result, 'functionality', 'Functionality', targetUrl, () => runFunctionalityModule(page, targetUrl, networkLog, ctx));
+    if (moduleList.includes('performance')) await runModuleSafely(result, 'performance', 'Performance', targetUrl, () => runPerformanceModule(page, targetUrl, networkLog, options.budgets || {}));
+    if (moduleList.includes('security')) await runModuleSafely(result, 'security', 'Security', targetUrl, () => runSecurityModule(page, ctx, targetUrl, response, context));
+    if (moduleList.includes('privacy')) await runModuleSafely(result, 'privacy', 'Privacy', targetUrl, () => runPrivacyModule(page, targetUrl));
+    if (moduleList.includes('content')) await runModuleSafely(result, 'content', 'Content', targetUrl, () => runContentModule(page, targetUrl));
+    if (moduleList.includes('auth')) await runModuleSafely(result, 'auth', 'Auth', targetUrl, () => runAuthModule(page, targetUrl));
+    if (moduleList.includes('forms')) await runModuleSafely(result, 'forms', 'Forms', targetUrl, () => runFormsModule(page, targetUrl));
+    if (moduleList.includes('technical')) await runModuleSafely(result, 'technical', 'Technical', targetUrl, () => runTechnicalModule(page, targetUrl, errors, networkLog, options.budgets || {}));
 
     result.issues = dedupeIssues(result.issues);
     result.ok = true;
   } catch (error) {
     result.errors.push(error.message);
   } finally {
-    await context.close();
+    await context.close().catch(() => {});
   }
   return result;
 }
