@@ -158,10 +158,22 @@ function buildHtmlSitemapSeeds(baseUrl, options) {
   return [...new Set(seeds)];
 }
 
+function sourceFamily(source) {
+  const value = String(source || 'unknown');
+  if (value.startsWith('sitemap:')) return 'sitemap';
+  if (value === 'common-route') return 'common-route';
+  if (value === 'homepage-link') return 'homepage-link';
+  if (value === 'crawl-link') return 'crawl-link';
+  if (value === 'crawl-seed') return 'crawl-seed';
+  if (value === 'manual') return 'manual';
+  if (value.includes('fallback')) return 'fallback';
+  return value || 'unknown';
+}
+
 function sourceCounts(items = []) {
   const counts = {};
   for (const item of items) {
-    const sources = String(item.source || 'unknown').split('+').map(s => s.trim()).filter(Boolean);
+    const sources = String(item.source || 'unknown').split('+').map(s => sourceFamily(s.trim())).filter(Boolean);
     for (const source of sources.length ? sources : ['unknown']) counts[source] = (counts[source] || 0) + 1;
   }
   return counts;
@@ -198,7 +210,7 @@ function discoveryQuality({ mode, included, rejected, diagnostics }) {
   }
 
   if (mode === 'sitemap' && !sitemapHits) recommendations.push('No useful XML sitemap URLs were found. Try Auto so SiteShot can combine sitemap checks with public navigation crawling.');
-  if (mode === 'auto' && !sitemapHits) recommendations.push('No sitemap URLs were found, so Auto relied on crawling and common public route checks.');
+  if (mode === 'auto' && !sitemapHits) recommendations.push('No usable sitemap URLs were found, so Auto relied on crawling and common public route checks.');
   if (includedCount < 3) recommendations.push('Discovery found very few pages. The site may be app-driven, blocked, auth-gated or using routes hidden from public navigation.');
   if (rejected.length > includedCount * 2) recommendations.push('Many candidates were rejected. Check exclude rules, trailing-slash redirects and whether the site returns visible not-found pages.');
   if (!crawlPages && mode === 'auto') recommendations.push('Auto could not crawl public pages successfully. Try lowering depth or checking whether the target blocks browser automation.');
