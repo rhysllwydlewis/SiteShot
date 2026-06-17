@@ -36,10 +36,11 @@ Run the checks separately so you can see which part failed:
 ```bash
 npm run check
 npm run check:repo
+npm run check:config
 npm run preflight
 ```
 
-`npm run check` covers JavaScript syntax checks. `npm run check:repo` checks repository consistency, docs, workflow references and example audit configs. `npm run preflight` checks the app-specific wiring and expected project structure.
+`npm run check` covers JavaScript syntax checks. `npm run check:repo` checks repository consistency, docs, workflow references and example audit configs. `npm run check:config` checks config-file loading, workflow URL handling and numeric defaults. `npm run preflight` checks the app-specific wiring and expected project structure.
 
 ## Windows build does not create an EXE
 
