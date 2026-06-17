@@ -65,6 +65,11 @@ export async function waitForPage(page, waitMs) {
   if (waitMs > 0) await page.waitForTimeout(waitMs);
 }
 
+async function waitForDiscoveryCandidate(page, waitMs = 150) {
+  await page.waitForLoadState('domcontentloaded', { timeout: 12000 }).catch(() => {});
+  if (waitMs > 0) await page.waitForTimeout(waitMs);
+}
+
 async function looksLikeNotFoundPage(page) {
   try {
     const title = await page.title().catch(() => '');
@@ -227,8 +232,8 @@ function discoveryQuality({ mode, included, rejected, diagnostics }) {
 
 async function tryRoute(page, url) {
   try {
-    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await waitForPage(page, 250);
+    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 12000 });
+    await waitForDiscoveryCandidate(page, 150);
     const status = response?.status() ?? 0;
     const notFoundLike = await looksLikeNotFoundPage(page);
     return {
@@ -288,7 +293,7 @@ async function validateCandidates(browser, options, candidates) {
   const rejected = [];
   const seenIncluded = new Set();
   const queue = [...candidates];
-  const workers = Math.min(3, Math.max(1, queue.length));
+  const workers = Math.min(6, Math.max(1, queue.length));
 
   async function worker() {
     while (queue.length && included.length < options.maxPages) {
@@ -364,7 +369,6 @@ export async function collectLinks(page, baseUrl, includeList, excludeList) {
 
   const links = await page.evaluate(() => {
     const found = new Set();
-
     const push = value => {
       if (!value || typeof value !== 'string') return;
       const trimmed = value.trim();
@@ -453,13 +457,7 @@ async function collectSitemapCandidates(request, baseUrl, options, maxSitemaps =
   const queue = [...new Set(discoveredSitemaps)];
   const visited = new Set();
   const candidates = [];
-  const diagnostics = {
-    sitemapsTried: [],
-    sitemapsWithLocs: [],
-    nestedSitemaps: [],
-    urlsFound: 0,
-    urlsRejected: 0
-  };
+  const diagnostics = { sitemapsTried: [], sitemapsWithLocs: [], nestedSitemaps: [], urlsFound: 0, urlsRejected: 0 };
 
   while (queue.length && visited.size < maxSitemaps && candidates.length < options.maxPages * 5) {
     const sitemapUrl = queue.shift();
@@ -546,9 +544,8 @@ export async function discoverPageCandidates(browser, options) {
   let candidates = [];
   const diagnostics = { mode, sitemap: null, crawl: null, common: null };
 
-  if (mode === 'exact' && options.pageList.length) {
-    candidates = options.pageList.map(page => discoveryCandidate(page, 'manual', 0));
-  } else if (mode === 'sitemap') {
+  if (mode === 'exact' && options.pageList.length) candidates = options.pageList.map(page => discoveryCandidate(page, 'manual', 0));
+  else if (mode === 'sitemap') {
     const page = await browser.newPage();
     try {
       const sitemap = await collectSitemapCandidates(page.request, options.url, options);
@@ -557,9 +554,7 @@ export async function discoverPageCandidates(browser, options) {
     } finally {
       await page.close().catch(() => {});
     }
-    if (!candidates.length) {
-      rejected.push({ url: `${new URL(options.url).origin}/sitemap.xml`, source: 'sitemap', included: false, status: 0, reason: 'No sitemap URLs found' });
-    }
+    if (!candidates.length) rejected.push({ url: `${new URL(options.url).origin}/sitemap.xml`, source: 'sitemap', included: false, status: 0, reason: 'No sitemap URLs found' });
   } else if (mode === 'auto') {
     const page = await browser.newPage();
     let sitemap;
@@ -574,11 +569,7 @@ export async function discoverPageCandidates(browser, options) {
     const sitemapSeeds = sitemap.candidates.slice(0, 10).map(item => item.url);
     const crawl = await crawlCandidates(browser, options, [options.url, ...sitemapSeeds, ...htmlSitemapSeeds]);
     diagnostics.crawl = crawl.diagnostics;
-    diagnostics.common = {
-      candidates: common.length,
-      htmlSitemapSeeds: htmlSitemapSeeds.length,
-      commonRoutesTried: COMMON_PUBLIC_ROUTES.length
-    };
+    diagnostics.common = { candidates: common.length, htmlSitemapSeeds: htmlSitemapSeeds.length, commonRoutesTried: COMMON_PUBLIC_ROUTES.length };
     candidates = uniqueCandidates([...sitemap.candidates, ...crawl.candidates, ...common], options.url);
   } else {
     const crawl = await crawlCandidates(browser, options, [options.url]);
@@ -587,43 +578,24 @@ export async function discoverPageCandidates(browser, options) {
   }
 
   candidates = uniqueCandidates(candidates, options.url).slice(0, Math.max(options.maxPages * 3, options.maxPages));
-
   console.log(`Validating ${candidates.length} discovered page candidate(s)...`);
-
-  const validation = await validateCandidates(browser, options, candidates);
-  rejected.push(...validation.rejected);
-  const included = validation.included;
-  const quality = discoveryQuality({ mode, included, rejected, diagnostics });
-
+  const validated = await validateCandidates(browser, options, candidates);
+  const included = validated.included;
+  const allRejected = [...rejected, ...validated.rejected];
   return {
     mode,
     included,
-    rejected,
+    rejected: allRejected,
     diagnostics,
-    quality,
-    summary: {
-      candidates: candidates.length,
-      included: included.length,
-      rejected: rejected.length,
-      sources: [...new Set([...included, ...rejected].map(item => item.source).filter(Boolean))],
-      sourceCounts: quality.sourceCounts,
-      confidence: quality.confidence,
-      quality: quality.level,
-      rejectedReasons: quality.rejectedReasons,
-      recommendations: quality.recommendations
-    }
+    summary: { candidates: candidates.length, included: included.length, rejected: allRejected.length, sources: Object.keys(sourceCounts(included)) },
+    quality: discoveryQuality({ mode, included, rejected: allRejected, diagnostics })
   };
 }
 
 export async function discoverPages(browser, options) {
-  // If the UI has already supplied a reviewed/selected page list, respect it.
-  // This is important for Auto Discover / Crawl / Sitemap preview flows:
-  // the user may untick pages before pressing Run Audit.
   if (options.pageList.length) {
     const resolved = [];
-    for (const rawPage of options.pageList) {
-      resolved.push(await resolveExplicitPage(browser, options, rawPage));
-    }
+    for (const rawPage of options.pageList) resolved.push(await resolveExplicitPage(browser, options, rawPage));
     const selected = [...new Set(resolved)].slice(0, options.maxPages);
     console.log(`Using ${selected.length} reviewed/manual page(s) supplied by the UI.`);
     return selected;
@@ -635,9 +607,7 @@ export async function discoverPages(browser, options) {
     return [canonicaliseAuditUrl(options.url)];
   }
 
-  for (const item of discovery.included) {
-    if (item.requestedUrl !== item.url) console.log(`Using ${item.url} (${item.source}; ${item.reason})`);
-  }
+  for (const item of discovery.included) if (item.requestedUrl !== item.url) console.log(`Using ${item.url} (${item.source}; ${item.reason})`);
   if (discovery.rejected.length) console.log(`Rejected ${discovery.rejected.length} invalid/duplicate/non-auditable URL(s).`);
   if (discovery.quality?.message) console.log(discovery.quality.message);
   for (const recommendation of discovery.quality?.recommendations || []) console.log(`Discovery recommendation: ${recommendation}`);
